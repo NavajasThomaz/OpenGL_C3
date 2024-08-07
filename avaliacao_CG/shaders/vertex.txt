@@ -1,11 +1,12 @@
 #version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoord;
+layout (location = 0) in vec3 aPos; // vertex position (x, y, z)
+layout (location = 1) in vec2 aTexCoord; // vertex texture coordinate (u, v)
 
-out vec2 TexCoord;
 
-void main()
+out vec2 TexCoord; // Manda (u, v) para o fragment shader
+
+void main() 
 {
-    gl_Position = vec4(aPos, 1.0);
-    TexCoord = aTexCoord;
+    gl_Position = vec4(aPos, 1.0); // Diz para a tela(por meio do gl_Position) onde o vertex será mostrado
+    TexCoord = aTexCoord; // Manda (u, v) para o fragment shader
 }
