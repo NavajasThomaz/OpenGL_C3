@@ -1,6 +1,7 @@
+<img align="center" width=100 src="https://artes.furg.br/images/logotipos/FURG_padrao.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
-<font size="10">_C3</font>
+<img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
 </div>
 
 ##### <div align="center">🧱Esse projeto é uma avaliação da diciplina de Sistemas Gráficos de 2024.🧱</div>
@@ -33,41 +34,47 @@
 </div>
 
 
-## Introdução
-<div align="center" >
-<img align="center" height=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" />
-<img align="center" height=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/numpy/numpy-original-wordmark.svg" />
-<img align="center" width=100 height=200 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
-</div>
+
+###
+<details open>
+
+<summary><h1>Introdução</h1></summary>
+
 
 ### Objetivo
 O projeto visa implementar um programa em OpenGL que renderiza um cubo personalizado com a logo do C3. O cubo é renderizado com iluminação e tonalização, e é possível interagir com ele, movendo-o, rotacionando-o e escalonando-o.
 
+
+
+
 ### Ferramentas
-
-As ferramentas utilizadas nesse projeto são:
-
-- OpenGL: biblioteca gráfica para renderização de gráficos 3D.
-- C++: linguagem de programação utilizada para implementar o programa.
-- GLM: biblioteca matemática para operações de vetores e matrizes.
-- GLEW: biblioteca para gerenciar extensões OpenGL.
-- GLFW: biblioteca para gerenciar janelas e eventos.
-
-### Características
-
-As principais características do projeto são:
-
-- Renderização de uma escada 3D com iluminação e tonalização.
-- Interação com a escada, movendo-a e escalonando-a.
-- Utilização de shaders para implementar a iluminação e tonalização.
-- Utilização de matrizes de transformação para implementar a movimentação e escalonamento.
+<div>
+<img align="center" width=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" />
+Linguagem escolhida
+</div>
+<div>
+<img align="center" width=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
+Biblioteca gráfica para renderização de gráficos 3D.
+</div>
+<div>
+<img align="center" width=100 src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
+linguagem de programação utilizada para implementar os Shaders.
+</div>
+<div>
+<img align="center" width=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/numpy/numpy-original-wordmark.svg" />
+Biblioteca numérica para operar com vetores e matrizes.
+</div>
+<div>
+<img align="center" width=50 src="https://pypi.org/static/images/logo-small.8998e9d1.svg" />
+Bibliotecas como GLM w GLFW para gerenciar janelas, eventos, operações de vetores e matrizes.
+</div>
 
 ### Implementação
 
-A implementação do projeto é dividida em várias etapas:
+A implementação do projeto é dividida em algumas etapas:
 
 1. **Configuração do ambiente:** Configurar o ambiente de desenvolvimento com as bibliotecas necessárias.
-2. **Criação da escada:** Criar o modelo da escada utilizando vértices e faces.
+2. **Criação da escada:** Criar o modelo do cubo personalizado utilizando vértices e faces.
 3. **Renderização da escada:** Renderizar a escada utilizando OpenGL.
 4. **Implementação da iluminação:** Implementar a iluminação utilizando shaders.
 5. **Implementação da tonalização:** Implementar a tonalização utilizando shaders.
@@ -88,15 +95,18 @@ Este projeto demonstra a capacidade de utilizar OpenGL para renderizar gráficos
 O código fonte do projeto está disponível no repositório do GitHub: [link para o repositório](https://github.com/NavajasThomaz/TumorVision).
 
 
+</details>
 
+###
+<details open>
 
-## Funções
+<summary><h1>Funções</h1></summary>
+
 - Movimentação
 1. Translação
 ```Python
-    def transladar(self, model, direcao_x, direcao_y, direcao_z):
-        return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
-
+def transladar(self, model, direcao_x, direcao_y, direcao_z):
+    return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
 ```
 ### glm.translate
 
