@@ -1,5 +1,7 @@
-Thomaz Colalillo Navajas - 140650
+O projeto mesmo em zip é muito grande para ser enviado no AVA, então está sendo enviado somente a main.py
+
+Thomaz Colalillo Navajas - 140560
 Denise Valéria velarde - 157670
 
-Detalhes sobre o código no gitHub:
+Projeto completo e detalhes sobre o código no gitHub:
 https://github.com/NavajasThomaz/OpenGL_C3

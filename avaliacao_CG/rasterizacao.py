@@ -2,7 +2,28 @@ import numpy as np
 from OpenGL.GL import *
 
 # Função que implementa o algoritmo de Bresenham para rasterizar uma linha
+def bresenham_line(x0, y0, x1, y1):
+    """Implementa o algoritmo de Bresenham para rasterizar uma linha"""
+    points = []  # Lista que armazenará os pontos da linha
+    dx = abs(x1 - x0)  # Diferença absoluta nas coordenadas x
+    dy = abs(y1 - y0)  # Diferença absoluta nas coordenadas y
+    sx = 1 if x0 < x1 else -1  # Sinal do incremento x
+    sy = 1 if y0 < y1 else -1  # Sinal do incremento y
+    err = dx - dy  # Erro inicial
 
+    while True:
+        points.append((x0, y0))  # Adiciona o ponto atual à lista de pontos
+        if x0 == x1 and y0 == y1:  # Verifica se o ponto final foi alcançado
+            break
+        e2 = 2 * err  # Calcula o dobro do erro
+        if e2 > -dy:  # Ajusta o erro e incrementa x
+            err -= dy
+            x0 += sx
+        if e2 < dx:  # Ajusta o erro e incrementa y
+            err += dx
+            y0 += sy
+
+    return points  # Retorna a lista de pontos da linha
 
 # Função que configura o VAO e VBO para a linha
 def setup_line(line_points):
