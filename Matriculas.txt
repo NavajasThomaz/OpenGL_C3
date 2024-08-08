@@ -1,0 +1,5 @@
+Thomaz Colalillo Navajas - 140650
+Denise Valéria velarde - 157670
+
+Detalhes sobre o código no gitHub:
+https://github.com/NavajasThomaz/OpenGL_C3
