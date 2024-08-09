@@ -1,4 +1,4 @@
-<img align="center" width=100 src="https://artes.furg.br/images/logotipos/FURG_padrao.png" />
+<img align="center" width=100 src="https://leea.furg.br/images/Logo_FURG_institucional2.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
 <img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
