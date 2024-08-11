@@ -51,8 +51,8 @@
 [Implementação](#Implementação)
 </summary>
 
-- [Objetivo](###Objetivo)
-- [Ferramentas](###Ferramentas)
+- [Objetivo](#Objetivo)
+- [Ferramentas](#Ferramentas)
 
 </details>
 <details open>
