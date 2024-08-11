@@ -1,65 +1,78 @@
-import glfw
-from OpenGL.GL import *
-import imgui
-from imgui.integrations.glfw import GlfwRenderer
-import numpy as np
-import glm
-import ctypes
-from PIL import Image
+import glfw  # Importa a biblioteca GLFW para criar janelas e gerenciar eventos
+from OpenGL.GL import *  # Importa todas as funções da biblioteca OpenGL
+import imgui  # Importa a biblioteca ImGui para criar interfaces gráficas
+from imgui.integrations.glfw import GlfwRenderer  # Renderer de ImGui para GLFW
+import numpy as np  # Biblioteca para manipulação de arrays
+import glm  # Biblioteca para operações matemáticas de gráficos
+import ctypes  # Biblioteca para interação com C/C++
+from PIL import Image  # Biblioteca para manipulação de imagens
 
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1280  # Define a largura da tela
+SCREEN_HEIGHT = 720  # Define a altura da tela
 
 def create_texture(image):
     """ Cria uma textura OpenGL a partir de um objeto Image. """
-    texture = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, texture)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.tobytes())
+    texture = glGenTextures(1)  # Gera um ID para uma nova textura
+    glBindTexture(GL_TEXTURE_2D, texture)  # Vincula a textura como uma textura 2D
+    glTexImage2D(GL_TEXTURE_2D,  # Define os dados da imagem para a textura
+                 0, # 
+                 GL_RGBA, # formato da textura
+                 image.width, # largura
+                 image.height, # altura
+                 0, # 
+                 GL_RGBA, #
+                 GL_UNSIGNED_BYTE, 
+                 image.tobytes())
+    # Define parâmetros de filtragem da textura
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glBindTexture(GL_TEXTURE_2D, 0)
-    return texture
+    glBindTexture(GL_TEXTURE_2D, 0)  # Desvincula a textura
+    return texture  # Retorna o ID da textura
 
 def load_image(filepath):
     """ Carrega uma imagem e retorna como um objeto Image. """
-    return Image.open(filepath).convert('RGBA')
+    return Image.open(filepath).convert('RGBA')  # Abre e converte a imagem para RGBA
 
 class StartScreen:
     def __init__(self):
-        self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Tela Inicial", None, None)
-        glfw.make_context_current(self.window)
-        imgui.create_context()
-        self.impl = GlfwRenderer(self.window)
-        self.start_game = False
+        self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Tela Inicial", None, None)# Cria uma janela GLFW
+        glfw.make_context_current(self.window)  # Define o contexto OpenGL para a janela
+        imgui.create_context()  # Cria um contexto ImGui
+        self.impl = GlfwRenderer(self.window)  # Cria um renderer ImGui para GLFW
+        self.start_game = False  # Flag para iniciar o jogo
 
     def show(self):
+        """ Mostra a tela inicial e aguarda ação do usuário. """
         while not glfw.window_should_close(self.window):
-            glfw.poll_events()
-            self.impl.process_inputs()
+            glfw.poll_events()  # Processa eventos de entrada
+            self.impl.process_inputs()  # Processa entradas para ImGui
 
-            imgui.new_frame()
-            imgui.begin("Bem-vindo!", closable=False)
-            if imgui.button("Iniciar"):
-                self.start_game = True
-                glfw.set_window_should_close(self.window, True)
-            imgui.end()
+            imgui.new_frame()  # Inicia um novo frame ImGui
+            imgui.begin("Bem-vindo!", closable=False)  # Cria uma janela ImGui
+            if imgui.button("Iniciar"):  # Cria um botão e verifica se foi pressionado
+                self.start_game = True  # Altera a flag para iniciar o jogo
+                glfw.set_window_should_close(self.window, True)  # Fecha a janela
+            imgui.end()  # Finaliza a janela ImGui
 
-            imgui.render()
-            self.impl.render(imgui.get_draw_data())
-            glfw.swap_buffers(self.window)
+            imgui.render()  # Renderiza a interface ImGui
+            self.impl.render(imgui.get_draw_data())  # Renderiza os dados do ImGui
+            glfw.swap_buffers(self.window)  # Troca os buffers da janela
 
-        self.impl.shutdown()
-        glfw.destroy_window(self.window)
+        self.impl.shutdown()  # Finaliza o renderer ImGui
+        glfw.destroy_window(self.window)  # Destroi a janela GLFW
 
 class OpenGLApp:
     def __init__(self):
-        # Create the window
+        
+        # Instancia a janela do glfw
         self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "C3_Logo", None, None)
-        self.projecao = 0
-        self.trans_values = [0.0, 0.0, 0.0]
-        self.rot_values = [0.0, 0.0, 0.0]
-        self.scale_value = 0.0
+        
+        
+        self.projecao = 0 # Tipo de projeção atual | 0 perspectiva, 1 ortogonal
+        self.trans_values = [0.0, 0.0, 0.0] # Vetor de translação
+        self.rot_values = [0.0, 0.0, 0.0] # Vetor de rotação
+        self.scale_value = 0.0 # Coeficiente de escala
         self.usePhong = False
         self.useGouraud = False
         self.useRaster = False
@@ -68,11 +81,11 @@ class OpenGLApp:
             glfw.terminate()
             raise Exception("GLFW window can't be created!")
 
-        glfw.make_context_current(self.window)
-        glfw.set_input_mode(self.window, glfw.CURSOR, glfw.CURSOR_DISABLED)
-
+        glfw.make_context_current(self.window) # Define a janela atual como contexto
+        glfw.set_input_mode(self.window, glfw.CURSOR, glfw.CURSOR_DISABLED) # Desabilita o cursor
+        
         # Set background color
-        glClearColor(0.1, 0.2, 0.3, 1.0)
+        glClearColor(0.6, 0.7, 1.0, 1.0)
 
         # Enable depth testing
         glEnable(GL_DEPTH_TEST)
@@ -87,18 +100,19 @@ class OpenGLApp:
         self.useGouraudLoc = glGetUniformLocation(self.shader, "useGouraud")
         
         # Get uniform locations
-        self.projection_loc = glGetUniformLocation(self.shader, "projection")
-        self.view_loc = glGetUniformLocation(self.shader, "view")
-        self.model_loc = glGetUniformLocation(self.shader, "model")
+        self.projection_loc = glGetUniformLocation(self.shader, "projection") # Localização da projeção
+        self.view_loc = glGetUniformLocation(self.shader, "view") # Localização da view
+        self.model_loc = glGetUniformLocation(self.shader, "model") # Localização da model
 
         # Camera settings
-        self.camera_pos = glm.vec3(0.0, 0.0, 3.0)
-        self.camera_front = glm.vec3(0.0, 0.0, -1.0)
-        self.camera_up = glm.vec3(0.0, 1.0, 0.0)
-        self.yaw = -90.0
-        self.pitch = 0.0
-        self.last_x = 400
-        self.last_y = 300
+        self.camera_pos = glm.vec3(0.0, 1.0, 3.0) # Poisção inicial
+        self.camera_front = glm.vec3(0.0, 0.0, -1.0) # Direção inicial
+        self.camera_up = glm.vec3(0.0, 1.0, 0.0) # Direção inicial
+        self.yaw = -90.0 # Rotação inicial
+        self.pitch = 0.0 # Rotação inicial
+        self.last_x = SCREEN_WIDTH/4  # Ultima posição x do mouse
+        self.last_y = SCREEN_HEIGHT/4 # Ultima posição y do mouse
+        
         glfw.set_cursor_pos_callback(self.window, self.mouse_callback)
 
         # Timing
@@ -111,6 +125,7 @@ class OpenGLApp:
     def create_cube(self):
         """Cria um cubo com textura."""
         vertices = [
+            # x     y     z     u    v
             -0.5, -0.5, -0.5,  0.0, 0.0,
              0.5, -0.5, -0.5,  1.0, 0.0,
              0.5,  0.5, -0.5,  1.0, 1.0,
@@ -155,50 +170,46 @@ class OpenGLApp:
         ]
         vertices = np.array(vertices, dtype=np.float32)
 
-        vao = glGenVertexArrays(1)
-        vbo = glGenBuffers(1)
+        
+        vao = glGenVertexArrays(1) # Vertex Array Object
+        vbo = glGenBuffers(1) # Vertex Buffer Object
+        
 
-        glBindVertexArray(vao)
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+        glBindVertexArray(vao) # Vincula o vao
+        glBindBuffer(GL_ARRAY_BUFFER, vbo) # Vincula o tipo de buffer
+        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW) # Envia os dados dos vértices para o buffer
 
         # Posição dos vértices
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
+        """
+        Aponta para os valores de coordenadas
+        vertices = [ x     y     z
+                   -0.5, -0.5, -0.5,  0.0, 0.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0,
+                    ...
+                   ]
+        """
+        
         # Coordenadas de textura
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
         glEnableVertexAttribArray(1)
+        """
+        Aponta para os valores de texturas
+        vertices = [                    u    v
+                   -0.5, -0.5, -0.5,  0.0, 0.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0,
+                    ...
+                   ]
+        """
 
-        glBindVertexArray(0)
+        glBindVertexArray(0) # Desvincula o vao
         return vao, vbo
 
-    def create_vao(self, vertices, indices):
-        vao = glGenVertexArrays(1)
-        vbo = glGenBuffers(1)
-        ebo = glGenBuffers(1)
-        nbo = glGenBuffers(1)  # Novo VBO para normais
-        
-        glBindVertexArray(vao)
-
-        # VBO for vertices
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
-
-        # EBO for indices
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices, GL_STATIC_DRAW)
-        
-
-        # Vertex Position Attributez
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * vertices.itemsize, ctypes.c_void_p(0))
-        glEnableVertexAttribArray(0)
-
-        # Unbind the VAO (good practice)
-        glBindVertexArray(0)
-
-        return vao
-
     def create_shader_program(self, vertex_file_path, fragment_file_path):
+        """ Compila e vincula um programa de shader a partir de arquivos de shader. """
         vertex_shader = self.compile_shader(open(vertex_file_path).read(), GL_VERTEX_SHADER)
         fragment_shader = self.compile_shader(open(fragment_file_path).read(), GL_FRAGMENT_SHADER)
         shader_program = glCreateProgram()
@@ -217,6 +228,7 @@ class OpenGLApp:
         return shader_program
 
     def compile_shader(self, source, shader_type):
+        """ Compila um shader a partir do código fonte. """
         shader = glCreateShader(shader_type)
         glShaderSource(shader, source)
         glCompileShader(shader)
@@ -253,6 +265,8 @@ class OpenGLApp:
 
     def process_input(self, window):
         camera_speed = 2.5 * self.delta_time
+        
+        # Movimentação da camera
         if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
             self.camera_pos += camera_speed * self.camera_front
         if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
@@ -261,14 +275,15 @@ class OpenGLApp:
             self.camera_pos -= glm.normalize(glm.cross(self.camera_front, self.camera_up)) * camera_speed
         if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
             self.camera_pos += glm.normalize(glm.cross(self.camera_front, self.camera_up)) * camera_speed
-        if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
-            glfw.set_window_should_close(window, True)
-        # Move a câmera para cima (tecla Espaço)
         if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
             self.camera_pos += camera_speed * self.camera_up
-        # Move a câmera para baixo (tecla Shift Esquerdo)
         if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
             self.camera_pos -= camera_speed * self.camera_up
+            
+        # HUD
+        if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
+            glfw.set_window_should_close(window, True)
+            
         # Muda as projeções
         if glfw.get_key(window, glfw.KEY_P) == glfw.PRESS:
             self.projecao = 0
@@ -318,7 +333,7 @@ class OpenGLApp:
             self.toggle_gouraud()
             
     def perspectiva(self):
-        projection = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
+        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
         
     def ortogonal(self):
@@ -327,6 +342,14 @@ class OpenGLApp:
     
     def transladar(self, model, direcao_x, direcao_y, direcao_z):
         return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
+        """ glm.translate
+            Assumindo que o modelo esta como indetidade
+            model=  |1 0 0 direcao_x|       |1 0 0 0|
+                    |0 1 0 direcao_y|   *   |0 1 0 0|
+                    |0 0 1 direcao_z|       |0 0 1 0|
+                    |0 0 0 1|               |0 0 0 1|
+
+        """
 
     def rotacionar(self, model, angle_x, angle_y, angle_z):
         # Aplica a rotação em cada eixo separadamente
@@ -349,56 +372,82 @@ class OpenGLApp:
         self.useRaster = not self.useRaster
     
     def run(self):
-        
-        self.cube_vao, self.cube_vbo = self.create_cube()
-        model = glm.mat4(1.0)  # Matriz modelo identidade
+        self.cube_vao, self.cube_vbo = self.create_cube() # cria o vao e vbo do cubo
+        model = glm.mat4(1.0)   
+        """Matriz modelo identidade
+            |1 0 0|
+            |0 1 0|
+            |0 0 1|
+        """
         
         while not glfw.window_should_close(self.window):
+            # atualização da tela
             current_frame = glfw.get_time()
             self.delta_time = current_frame - self.last_frame
             self.last_frame = current_frame
 
-            self.process_input(self.window)
+            self.process_input(self.window) # Processa os inputs
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # limpa o buffer de cor e profundidade
 
-            glUseProgram(self.shader)
+            glUseProgram(self.shader) # Vincula o programa de shader
             
-            
+            # Define a projeção
             if self.projecao == 0:
                 self.perspectiva()
             else:
                 self.ortogonal()
-            if self.trans_values != [0.0, 0.0, 0.0]:
-                model = self.transladar(model, self.trans_values[0], self.trans_values[1], self.trans_values[2])
-                self.trans_values = [0.0, 0.0, 0.0]
-            if self.rot_values != [0.0, 0.0, 0.0]:
-                model = self.rotacionar(model, self.rot_values[0], self.rot_values[1], self.rot_values[2])
-                self.rot_values = [0.0, 0.0, 0.0]
-            if self.scale_value != 0.0:
-                model = self.escalonar(model, self.scale_value)
+            
+            if self.trans_values != [0.0, 0.0, 0.0]: # Verifica se tem input
+                model = self.transladar(model, self.trans_values[0], self.trans_values[1], self.trans_values[2]) # Aplica translação com os valores do input
+                self.trans_values = [0.0, 0.0, 0.0] # Limpa o input
+            
+            if self.rot_values != [0.0, 0.0, 0.0]: # Verifica se tem input
+                model = self.rotacionar(model, self.rot_values[0], self.rot_values[1], self.rot_values[2]) # Aplica rotação com os valores do input
+                self.rot_values = [0.0, 0.0, 0.0] # Limpa o input
+                
+            if self.scale_value != 0.0: # Verifica se tem input
+                model = self.escalonar(model, self.scale_value) # Aplica escala com os valores do input
                 self.scale_value = 0.0
             
-            glUniform1i(self.usePhongLoc, self.usePhong)
+            glUniform1i(self.usePhongLoc, self.usePhong) # Diz ao shader se deve usar Phong
             
             view = glm.lookAt(self.camera_pos, self.camera_pos + self.camera_front, self.camera_up)
-            
-            glUniformMatrix4fv(self.view_loc, 1, GL_FALSE, glm.value_ptr(view))
-            glUniformMatrix4fv(self.model_loc, 1, GL_FALSE, glm.value_ptr(model))
-            
-            # Vincular textura
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
-            glUniform1i(glGetUniformLocation(self.shader, "ourTexture"), 0)
+            """glm.lookAt:
+            c = camera position
+            t = target position
+            u = camera up vector
+            f = normalize(t - c) 
+            r = normalize(cross(f, u)) 
+            up = cross(r, f) 
 
-            glBindVertexArray(self.cube_vao)
-            glDrawArrays(GL_TRIANGLES, 0, 36)  # Desenha o cubo usando índices
-            glBindVertexArray(0)
+            | rx  ry  rz -dot(r, c) |
+            | ux  uy  uz -dot(up, c) |
+            | -fx -fy -fz  dot(f, c) |
+            |  0   0   0      1      |
+            """
+            
+            glUniformMatrix4fv(self.view_loc, 1, GL_FALSE, glm.value_ptr(view)) #glm.value_ptr: usa ponteiro
+            glUniformMatrix4fv(self.model_loc, 1, GL_FALSE, glm.value_ptr(model))
+            """glUniformMatrix4fv:
+                Manda uma matrix 4x4 de floats pra uma variável uniforme do shader
+                Vertex Shader recebe matrix 4x4 de floats do modelo e da view
+            """
+            
+            
+            glActiveTexture(GL_TEXTURE0) # Ativa o espaço da memoria GL_TEXTURE0
+            glBindTexture(GL_TEXTURE_2D, self.texture) # Vincular textura
+            glUniform1i(glGetUniformLocation(self.shader, "ourTexture"), 0) # Passa para o vertex shader o sampler2d
+
+            glBindVertexArray(self.cube_vao) # Seleciona o vao do cubo
+            glDrawArrays(GL_TRIANGLES, 0, 36)  # Desenha o cubo usando triangulos como forma primitiva | 0: index inicial, (36: numero de vertices)/3 = 12 triangulos.
+            glBindVertexArray(0) # Deseleciona o vao do cubo
 
             glfw.swap_buffers(self.window)
             glfw.poll_events()
 
         glfw.terminate()
+        
 
     def create_texture(self, texture_path):
         texture = glGenTextures(1)

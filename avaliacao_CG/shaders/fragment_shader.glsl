@@ -18,7 +18,7 @@ void main()
 
     if (usePhong) {
         // Luz ambiente
-        float ambientStrength = 0.1;
+        float ambientStrength = 0.9;
         vec3 ambient = ambientStrength * lightColor;
 
         // Luz difusa
