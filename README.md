@@ -32,41 +32,45 @@
 
 </div>
 <div>
+    <details open>
+        <summary>
 
+# Sumário</summary>
 
+<details open><summary>
 
-<style>
-.teste{
-    background-color: red;
-    color: white;
-    border: 2px solid black;
-    padding: 10px;
-    margin: 10px;
-}
-</style>
+[Introdução](#Introdução)</summary>
 
-# Sumário
-<details open>
-<summary></summary>
-
-<div class="teste">
-
-1. [Introdução](#Introdução)
-1. [Introdução](#Introdução)
-2. [Implementação](#technologies)
-3. [Instruções](#setup)
-4. [Introdução](#Introdução)
-5. [Implementação](#technologies)
-6. [Instruções](#setup)
-
-</div>
+- [Objetivo](###Objetivo)
+- [Ferramentas](###Ferramentas)
 
 </details>
+<details open>
+<summary>
 
-## Introdução
+[Implementação](#Implementação)
+</summary>
+
+- [Objetivo](###Objetivo)
+- [Ferramentas](###Ferramentas)
+
+</details>
+<details open>
+<summary>
+
+[Instruções](#Instruções)
+</summary>
+
+- [Objetivo](###Objetivo)
+- [Ferramentas](###Ferramentas)
+
+</details>
+</details>
+
+# Introdução
 <details open>
 
-<summary><h1>Introdução</h1></summary>
+<summary></summary>
 
 ### Objetivo
 O projeto visa implementar um programa em OpenGL que renderiza um cubo personalizado com a logo do C3. O cubo é renderizado com iluminação e tonalização, e é possível interagir com ele, movendo-o, rotacionando-o e escalonando-o.
@@ -75,7 +79,7 @@ O projeto visa implementar um programa em OpenGL que renderiza um cubo personali
 
 
 ### Ferramentas
-<div>
+<div style=display:inline-block>
 <img align="center" width=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" />
 Linguagem escolhida
 </div>
@@ -97,9 +101,11 @@ Bibliotecas como GLM w GLFW para gerenciar janelas, eventos, operações de veto
 </div>
 </details>
 
-###
+
+
+# Implementação
 <details open>
-<summary><h1>Implementação</h1></summary>
+<summary></summary>
 
 ### 
 1. **Bibliotecas utilizadas:** Na introdução falamos sobre as ferramentas que utilizamos e aqui mostraremos as bibliotecas utilizadas importadas no inicio do código.
