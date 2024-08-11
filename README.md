@@ -1,4 +1,4 @@
-<img align="center" width=100 src="https://leea.furg.br/images/Logo_FURG_institucional2.png" />
+<img align="center" width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
 <img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
@@ -25,7 +25,6 @@
 </div>
 
 ### <div align="center">Denise Valéria velarde - 157670</div>
-
 <div style="display: inline_block", align="center">
     <a href = "mailto:denise.velarde1@outlook.com"><img src="https://img.shields.io/badge/Microsoft_Outlook-0078D4?style=for-the-badge&logo=microsoft-outlook&logoColor=white" target="_blank"></a>
     <a href="www.linkedin.com/in/thomaz-navajas" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a> 
@@ -34,17 +33,37 @@
 </div>
 <div>
 
-###
-<details open>
-<summary><h1>Sumário</h1></summary>
 
-1. [Introdução](#general-info)
-2. [Technologies](#technologies)
-3. [Setup](#setup)
+
+<style>
+.teste{
+    background-color: red;
+    color: white;
+    border: 2px solid black;
+    padding: 10px;
+    margin: 10px;
+}
+</style>
+
+# Sumário
+<details open>
+<summary></summary>
+
+<div class="teste">
+
+1. [Introdução](#Introdução)
+1. [Introdução](#Introdução)
+2. [Implementação](#technologies)
+3. [Instruções](#setup)
+4. [Introdução](#Introdução)
+5. [Implementação](#technologies)
+6. [Instruções](#setup)
+
+</div>
 
 </details>
 
-###
+## Introdução
 <details open>
 
 <summary><h1>Introdução</h1></summary>
