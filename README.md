@@ -1,8 +1,8 @@
 <img align="center" style='position: fixed' width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
-<img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
-</div>
+
+
 
 
 ##### <div align="center">🧱Esse projeto é uma avaliação da diciplina de Sistemas Gráficos de 2024.🧱</div>
