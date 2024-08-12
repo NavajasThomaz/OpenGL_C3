@@ -1,8 +1,8 @@
 <img align="center" style='position: fixed' width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
-
-
+<img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
+</div>
 
 
 ##### <div align="center">🧱Esse projeto é uma avaliação da diciplina de Sistemas Gráficos de 2024.🧱</div>
@@ -32,14 +32,9 @@
     <a href="https://github.com/DeniseValeriaVelarde" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" target="_blank"></a>
 
 </div>
-
 <div>
     <details open>
         <summary>
-
-
-
-
 
 # Sumário</summary>
 
@@ -104,11 +99,13 @@ SCREEN_HEIGHT = 720 #
 2. **Configuração do ambiente:** Fizemos duas classes, uma para janela inicial e outra para a aplicação da OpenGL.
 
 <div align="center">
-<img src="https://github.com/NavajasThomaz/OpenGL_C3/blob/main/avaliacao_CG/Diagrama_das_Classes.png?raw=true"/>
+    <img src="https://github.com/NavajasThomaz/OpenGL_C3/blob/main/avaliacao_CG/Diagrama_das_Classes.png?raw=true"/>
 </div>
 
 
+
 - Janela inicial
+
 ```Python
 class StartScreen:
     def __init__(self):
@@ -215,6 +212,19 @@ class OpenGLApp:
 
 #### Criação do cubo
 
+
+
+<div align='center'>
+
+Essa função cria o **Vertex Array Object** e o **Vertex Buffer Object** do cubo, ja com o mapeamento de coordenadas das texturas.
+
+<img src="https://blogger.googleusercontent.com/img/a/AVvXsEgHH1F9U8J1GdqKNNxOnkc1eu8rhuDOYhEhhkzNagpHdu5S4Uha9x-i11CQvy2Wvj8nm4TEgc7lv-hQZ993nqhiE6-hIki6_9NvMY0Valt8CLD9Dy-PH6qufiKLbVshiT4ZFARznVHgjNL0vPyqET1-Vt0FRR6WYNZ1Xunuz6brCWlgTJEyxqZBp4dm=w400-h175"/>
+
+**Vertex Array Object (VAO)** é um objeto que armazena todas as configurações necessárias para a especificação dos dados de vértice que serão usados nas operações de desenho.
+
+**O Vertex Buffer Object (VBO)** é um buffer que armazena dados de vértices na memória da GPU. Isso pode incluir coordenadas de vértices, cores, coordenadas de textura, normais, e outros dados de vértice. O VBO é utilizado para enviar grandes quantidades de dados de vértice para a GPU de uma só vez, o que é muito mais eficiente do que enviar dados um vértice de cada vez.
+
+</div>
 
 
 ```Python
@@ -359,9 +369,12 @@ Utilizamos a biblioteca pillow para ler a imagem png da textura e converter para
 
 #### Criação e compilação dos shaders
 
+<div align='center'>
 Utlizamos 2 shaders programados em Opengl Shading Language (GLSL)
 
-**Vertex shaders** ajustam a posição e os atributos dos vértices para definir a forma dos objetos 3D.
+**Vertex shaders** ajustam a posição e os atributos dos vértices para definir a forma dos objetos 3D. 
+</div>
+
 
 ```glsl
 #version 330 core
@@ -379,8 +392,10 @@ void main() {
     TexCoord = texCoord; // Passa as coordenadas de textura para o fragment shader
 }
 ```
+<div align='center'>
 
  **Fragment shaders** calculam a cor e os detalhes de cada pixel, permitindo efeitos como texturização e iluminação.
+</div>
 
 ```glsl
 #version 330 core
@@ -425,6 +440,23 @@ void main()
     }
 }
 ```
+<div align='center'>
+Utilizamos 2 funções dentro da nossa classe para criar e compilar os shaders.
+</div>
+
+```Python
+    def compile_shader(self, source, shader_type):
+        """ Compila um shader a partir do código fonte. """
+        shader = glCreateShader(shader_type)
+        glShaderSource(shader, source)
+        glCompileShader(shader)
+
+        # Check for compilation errors
+        if glGetShaderiv(shader, GL_COMPILE_STATUS) != GL_TRUE:
+            raise Exception(f"Shader compilation failed: {glGetShaderInfoLog(shader).decode()}")
+
+        return shader
+```
 
 ```Python
     def create_shader_program(self, vertex_file_path, fragment_file_path):
@@ -446,21 +478,17 @@ void main()
 
         return shader_program
 ```
-```Python
-    def compile_shader(self, source, shader_type):
-        """ Compila um shader a partir do código fonte. """
-        shader = glCreateShader(shader_type)
-        glShaderSource(shader, source)
-        glCompileShader(shader)
 
-        # Check for compilation errors
-        if glGetShaderiv(shader, GL_COMPILE_STATUS) != GL_TRUE:
-            raise Exception(f"Shader compilation failed: {glGetShaderInfoLog(shader).decode()}")
-
-        return shader
-```
 
 #### Inputs do usuário
+
+<div align='center'>
+
+Funções para processar as entradas de movimento e interações(inputs) do usuario.
+
+**mouse_callback** calcula a direção do movimento do mouse
+
+</div>
 
 ```Python
     def mouse_callback(self, window, xpos, ypos):
@@ -487,6 +515,12 @@ void main()
         front.z = glm.sin(glm.radians(self.yaw)) * glm.cos(glm.radians(self.pitch))
         self.camera_front = glm.normalize(front)
 ```
+
+<div align='center'>
+
+**process_input** Recebe e trata as entradas do teclado.
+</div>
+
 ```Python
     def process_input(self, window):
         camera_speed = 2.5 * self.delta_time
@@ -560,19 +594,75 @@ void main()
 
 #### Projeções
 
+<div align='center'>
+
+**Perspectiva**, utilizamos a função glm.perspective() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D.
+</div>
+
 ```Python
     def perspectiva(self):
-        projection = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
+        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.perspective
+
+        fov = Campo de visão
+        aspect = proporção de aspecto da tela
+        n = Distancia do plano mais proximo
+        f = Distancia do plano mais distante
+
+        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
+
+            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
+
+        Segunda Coluna: Relacionada à escala vertical.
+
+            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
+
+        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
+
+            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
+            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
+
+        Quarta Coluna: Usada para a divisão de perspectiva.
+
+            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
+
+        |cot(fov/2) / aspect   0          0                      0|
+        |0                     cot(fov/2) 0                      0|
+        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
+        |0                     0         -1                      0|
+
+        """
+
 ```
+
+<div align='center'>
+
+**Ortogonal**, utilizamos a função glm.ortho() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D. Esta função da biblioteca GLM cria uma matriz de projeção ortogonal (ou ortográfica). Diferente da projeção em perspectiva, a projeção ortogonal mantém o tamanho dos objetos independentemente da distância da câmera.
+</div>
+
 ```Python
     def ortogonal(self):
         projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.ortho
+        
+        |2/(right-left)    0               0               -(right+left)/(right-left)|
+        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
+        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
+        |0                 0               0               1                         |
+        """
 ```
 
-####
+#### Translação, Rotação e Escala
 
+<div align='center'>
+As seguintes funções utilizão funções disponiveis pela glm para calcular a movimentação e escala do cubo.
+</div>
+
+**Translação**
 ```Python
     def transladar(self, model, direcao_x, direcao_y, direcao_z):
         return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
@@ -582,9 +672,9 @@ void main()
                     |0 1 0 direcao_y|   *   |0 1 0 0|
                     |0 0 1 direcao_z|       |0 0 1 0|
                     |0 0 0 1|               |0 0 0 1|
-
         """
 ```
+**Rotaçao**
 ```Python
     def rotacionar(self, model, angle_x, angle_y, angle_z):
         # Aplica a rotação em cada eixo separadamente
@@ -592,11 +682,40 @@ void main()
         model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
         model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
         return model
+        """glm.rotate
+            Rx = | 1  0       0       0 |
+                 | 0  cos(x) -sin(x)  0 |
+                 | 0  sin(x)  cos(x)  0 |
+                 | 0  0       0       1 |
+
+            Ry = | cos(y)  0  sin(y)  0 |
+                 | 0       1  0       0 |
+                 | -sin(y) 0  cos(y)  0 |
+                 | 0       0  0       1 |
+            
+            Rz = | cos(z) -sin(z)  0  0 |
+                 | sin(z)  cos(z)  0  0 |
+                 | 0       0       1  0 |
+                 | 0       0       0  1 |
+        """
 ```
+**Escala**
 ```Python
     def escalonar(self, model, escala):
         return glm.scale(model, glm.vec3(escala, escala, escala))
+        """glm.scale
+            S = | escala  0       0       0 |
+                | 0       escala  0       0 |
+                | 0       0       escala  0 |
+                | 0       0       0       1 |
+        """
 ```
+
+#### Iluminação e Tonalização
+<div align='center'>
+As seguintes funções ficam responsáveis por atualizar as variáveis(também as dos shaders) de utilização. Para que seja possível ativar e desativar os modelos durante a execução
+</div>
+
 ```Python
     def toggle_phong(self):
         self.usePhong = not self.usePhong
@@ -610,6 +729,9 @@ void main()
     def toggle_raster(self):
         self.useRaster = not self.useRaster
 ```
+
+#### Execução
+
 ```Python
     def run(self):
         self.cube_vao, self.cube_vbo = self.create_cube() # cria o vao e vbo do cubo
@@ -689,18 +811,10 @@ void main()
         glfw.terminate()
 ```
 
-
-2. **Criação da escada:** Criar o modelo do cubo personalizado utilizando vértices e faces.
-3. **Renderização da escada:** Renderizar a escada utilizando OpenGL.
-4. **Implementação da iluminação:** Implementar a iluminação utilizando shaders.
-5. **Implementação da tonalização:** Implementar a tonalização utilizando shaders.
-6. **Implementação da interação:** Implementar a interação com a escada, movendo-a e escalonando-a.
-
-
-
 ### Resultados
 
 O resultado final do projeto é um programa que renderiza uma escada 3D com iluminação e tonalização, e que permite ao usuário interagir com ela, movendo-a e escalonando-a.
+
 
 ### Conclusão
 

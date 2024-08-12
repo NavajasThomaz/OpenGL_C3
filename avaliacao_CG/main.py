@@ -342,11 +342,50 @@ class OpenGLApp:
             
     def perspectiva(self):
         projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.perspective
         
+        fov = Campo de visão
+        aspect = proporção de aspecto da tela
+        n = Distancia do plano mais proximo
+        f = Distancia do plano mais distante
+
+        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
+
+            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
+
+        Segunda Coluna: Relacionada à escala vertical.
+
+            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
+
+        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
+
+            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
+            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
+
+        Quarta Coluna: Usada para a divisão de perspectiva.
+
+            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
+
+        |cot(fov/2) / aspect   0          0                      0|
+        |0                     cot(fov/2) 0                      0|
+        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
+        |0                     0         -1                      0|
+
+        """
+    
     def ortogonal(self):
         projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.ortho
+        
+        |2/(right-left)    0               0               -(right+left)/(right-left)|
+        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
+        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
+        |0                 0               0               1                         |
+        """
     
     def transladar(self, model, direcao_x, direcao_y, direcao_z):
         return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
@@ -365,9 +404,31 @@ class OpenGLApp:
         model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
         model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
         return model
+        """glm.rotate
+            Rx = | 1  0       0       0 |
+                 | 0  cos(x) -sin(x)  0 |
+                 | 0  sin(x)  cos(x)  0 |
+                 | 0  0       0       1 |
+
+            Ry = | cos(y)  0  sin(y)  0 |
+                 | 0       1  0       0 |
+                 | -sin(y) 0  cos(y)  0 |
+                 | 0       0  0       1 |
+            
+            Rz = | cos(z) -sin(z)  0  0 |
+                 | sin(z)  cos(z)  0  0 |
+                 | 0       0       1  0 |
+                 | 0       0       0  1 |
+        """
     
     def escalonar(self, model, escala):
         return glm.scale(model, glm.vec3(escala, escala, escala))
+        """glm.scale
+            S = | escala  0       0       0 |
+                | 0       escala  0       0 |
+                | 0       0       escala  0 |
+                | 0       0       0       1 |
+        """
 
     def toggle_phong(self):
         self.usePhong = not self.usePhong
