@@ -4,6 +4,7 @@
 <img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
 </div>
 
+
 ##### <div align="center">🧱Esse projeto é uma avaliação da diciplina de Sistemas Gráficos de 2024.🧱</div>
 
 <div align="center">
@@ -37,46 +38,19 @@
 
 # Sumário</summary>
 
-<details open><summary>
+1. [Introdução](#Introdução)
+2. [Implementação](#Implementação)
+3. [Instruções](#Instruções)
 
-[Introdução](#Introdução)</summary>
-
-- [Objetivo](###Objetivo)
-- [Ferramentas](###Ferramentas)
-
-</details>
+    </details>
+</div>
 <details open>
 <summary>
 
-[Implementação](#Implementação)
-</summary>
-
-- [Objetivo](#Objetivo)
-- [Ferramentas](#Ferramentas)
-
-</details>
-<details open>
-<summary>
-
-[Instruções](#Instruções)
-</summary>
-
-- [Objetivo](###Objetivo)
-- [Ferramentas](###Ferramentas)
-
-</details>
-</details>
-
-# Introdução
-<details open>
-
-<summary></summary>
+# Introdução</summary>
 
 ### Objetivo
 O projeto visa implementar um programa em OpenGL que renderiza um cubo personalizado com a logo do C3. O cubo é renderizado com iluminação e tonalização, e é possível interagir com ele, movendo-o, rotacionando-o e escalonando-o.
-
-
-
 
 ### Ferramentas
 <div style=display:inline-block>
@@ -103,17 +77,21 @@ Bibliotecas como GLM w GLFW para gerenciar janelas, eventos, operações de veto
 
 
 
-# Implementação
-<details open>
-<summary></summary>
 
-### 
+<details open>
+<summary>
+
+# Implementação</summary>
+
+###
+Essa seção explica o passo a passo da implementação do programa em OpenGL.
+
 1. **Bibliotecas utilizadas:** Na introdução falamos sobre as ferramentas que utilizamos e aqui mostraremos as bibliotecas utilizadas importadas no inicio do código.
 ```Python
 import glm # utilizado para operações de vetores e matrizes
 import glfw # utilizado para gerenciar janelas, eventos
 import imgui # utilizado para renderização de gráficos 3D
-import ctypes
+import ctypes # Biblioteca para interação com C/C++
 from OpenGL.GL import * # utilizado para renderização de gráficos 3D
 import numpy as np # utilizado para operar com vetores e matrizes
 from PIL import Image # utilizado para carregar imagens
@@ -157,19 +135,26 @@ class StartScreen:
 
         self.impl.shutdown()
         glfw.destroy_window(self.window)
-
 ```
 
 - Janela do OpenGL
+
+A classe criada para essa janela é mais complexa doque a anterior, pois ela possue funções para o funcionamento da OpenGl.
+
+#### Inicialização da janela
+
 ```Python
 class OpenGLApp:
     def __init__(self):
-        # Create the window
+        
+        # Instancia a janela do glfw
         self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "C3_Logo", None, None)
-        self.projecao = 0
-        self.trans_values = [0.0, 0.0, 0.0]
-        self.rot_values = [0.0, 0.0, 0.0]
-        self.scale_value = 0.0
+        
+        
+        self.projecao = 0 # Tipo de projeção atual | 0 perspectiva, 1 ortogonal
+        self.trans_values = [0.0, 0.0, 0.0] # Vetor de translação
+        self.rot_values = [0.0, 0.0, 0.0] # Vetor de rotação
+        self.scale_value = 0.0 # Coeficiente de escala
         self.usePhong = False
         self.useGouraud = False
         self.useRaster = False
@@ -178,11 +163,11 @@ class OpenGLApp:
             glfw.terminate()
             raise Exception("GLFW window can't be created!")
 
-        glfw.make_context_current(self.window)
-        glfw.set_input_mode(self.window, glfw.CURSOR, glfw.CURSOR_DISABLED)
-
+        glfw.make_context_current(self.window) # Define a janela atual como contexto
+        glfw.set_input_mode(self.window, glfw.CURSOR, glfw.CURSOR_DISABLED) # Desabilita o cursor
+        
         # Set background color
-        glClearColor(0.1, 0.2, 0.3, 1.0)
+        glClearColor(0.6, 0.7, 1.0, 1.0)
 
         # Enable depth testing
         glEnable(GL_DEPTH_TEST)
@@ -197,18 +182,19 @@ class OpenGLApp:
         self.useGouraudLoc = glGetUniformLocation(self.shader, "useGouraud")
         
         # Get uniform locations
-        self.projection_loc = glGetUniformLocation(self.shader, "projection")
-        self.view_loc = glGetUniformLocation(self.shader, "view")
-        self.model_loc = glGetUniformLocation(self.shader, "model")
+        self.projection_loc = glGetUniformLocation(self.shader, "projection") # Localização da projeção
+        self.view_loc = glGetUniformLocation(self.shader, "view") # Localização da view
+        self.model_loc = glGetUniformLocation(self.shader, "model") # Localização da model
 
         # Camera settings
-        self.camera_pos = glm.vec3(0.0, 0.0, 3.0)
-        self.camera_front = glm.vec3(0.0, 0.0, -1.0)
-        self.camera_up = glm.vec3(0.0, 1.0, 0.0)
-        self.yaw = -90.0
-        self.pitch = 0.0
-        self.last_x = 400
-        self.last_y = 300
+        self.camera_pos = glm.vec3(0.0, 1.0, 3.0) # Poisção inicial
+        self.camera_front = glm.vec3(0.0, 0.0, -1.0) # Direção inicial
+        self.camera_up = glm.vec3(0.0, 1.0, 0.0) # Direção inicial
+        self.yaw = -90.0 # Rotação inicial
+        self.pitch = 0.0 # Rotação inicial
+        self.last_x = SCREEN_WIDTH/4  # Ultima posição x do mouse
+        self.last_y = SCREEN_HEIGHT/4 # Ultima posição y do mouse
+        
         glfw.set_cursor_pos_callback(self.window, self.mouse_callback)
 
         # Timing
@@ -218,10 +204,16 @@ class OpenGLApp:
         # Textura
         self.texture = self.create_texture("Textures/logoFurg.png")
 ```
+
+<div>
+
+#### Criação do cubo
+
 ```Python
     def create_cube(self):
         """Cria um cubo com textura."""
         vertices = [
+            # x     y     z     u    v
             -0.5, -0.5, -0.5,  0.0, 0.0,
              0.5, -0.5, -0.5,  1.0, 0.0,
              0.5,  0.5, -0.5,  1.0, 1.0,
@@ -266,52 +258,57 @@ class OpenGLApp:
         ]
         vertices = np.array(vertices, dtype=np.float32)
 
-        vao = glGenVertexArrays(1)
-        vbo = glGenBuffers(1)
+        
+        vao = glGenVertexArrays(1) # Vertex Array Object
+        vbo = glGenBuffers(1) # Vertex Buffer Object
+        
 
-        glBindVertexArray(vao)
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+        glBindVertexArray(vao) # Vincula o vao
+        glBindBuffer(GL_ARRAY_BUFFER, vbo) # Vincula o tipo de buffer
+        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW) # Envia os dados dos vértices para o buffer
 
         # Posição dos vértices
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
+        """
+        Aponta para os valores de coordenadas
+        vertices = [ x     y     z
+                   -0.5, -0.5, -0.5,  0.0, 0.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0,
+                    ...
+                   ]
+        """
+        
         # Coordenadas de textura
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
         glEnableVertexAttribArray(1)
+        """
+        Aponta para os valores de texturas
+        vertices = [                    u    v
+                   -0.5, -0.5, -0.5,  0.0, 0.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0,
+                    ...
+                   ]
+        """
 
-        glBindVertexArray(0)
+        glBindVertexArray(0) # Desvincula o vao
         return vao, vbo
 ```
-```Python
-    def create_vao(self, vertices, indices):
-        vao = glGenVertexArrays(1)
-        vbo = glGenBuffers(1)
-        ebo = glGenBuffers(1)
-        nbo = glGenBuffers(1)  # Novo VBO para normais
-        
-        glBindVertexArray(vao)
 
-        # VBO for vertices
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
 
-        # EBO for indices
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices, GL_STATIC_DRAW)
-        
+<div align='center'>
+<img align="center" height=300 src="https://docs.hektorprofe.net/cdn/graficos3d/image-84.png" />
+<img align="center" width=373 src="https://docs.hektorprofe.net/cdn/graficos3d/image-82.png" />
 
-        # Vertex Position Attributez
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * vertices.itemsize, ctypes.c_void_p(0))
-        glEnableVertexAttribArray(0)
+</div>
 
-        # Unbind the VAO (good practice)
-        glBindVertexArray(0)
+</div>
 
-        return vao
-```
 ```Python
     def create_shader_program(self, vertex_file_path, fragment_file_path):
+        """ Compila e vincula um programa de shader a partir de arquivos de shader. """
         vertex_shader = self.compile_shader(open(vertex_file_path).read(), GL_VERTEX_SHADER)
         fragment_shader = self.compile_shader(open(fragment_file_path).read(), GL_FRAGMENT_SHADER)
         shader_program = glCreateProgram()
@@ -331,6 +328,7 @@ class OpenGLApp:
 ```
 ```Python
     def compile_shader(self, source, shader_type):
+        """ Compila um shader a partir do código fonte. """
         shader = glCreateShader(shader_type)
         glShaderSource(shader, source)
         glCompileShader(shader)
@@ -369,6 +367,8 @@ class OpenGLApp:
 ```Python
     def process_input(self, window):
         camera_speed = 2.5 * self.delta_time
+        
+        # Movimentação da camera
         if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
             self.camera_pos += camera_speed * self.camera_front
         if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
@@ -377,14 +377,15 @@ class OpenGLApp:
             self.camera_pos -= glm.normalize(glm.cross(self.camera_front, self.camera_up)) * camera_speed
         if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
             self.camera_pos += glm.normalize(glm.cross(self.camera_front, self.camera_up)) * camera_speed
-        if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
-            glfw.set_window_should_close(window, True)
-        # Move a câmera para cima (tecla Espaço)
         if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
             self.camera_pos += camera_speed * self.camera_up
-        # Move a câmera para baixo (tecla Shift Esquerdo)
         if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
             self.camera_pos -= camera_speed * self.camera_up
+            
+        # HUD
+        if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
+            glfw.set_window_should_close(window, True)
+            
         # Muda as projeções
         if glfw.get_key(window, glfw.KEY_P) == glfw.PRESS:
             self.projecao = 0
@@ -446,6 +447,14 @@ class OpenGLApp:
 ```Python
     def transladar(self, model, direcao_x, direcao_y, direcao_z):
         return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
+        """ glm.translate
+            Assumindo que o modelo esta como indetidade
+            model=  |1 0 0 direcao_x|       |1 0 0 0|
+                    |0 1 0 direcao_y|   *   |0 1 0 0|
+                    |0 0 1 direcao_z|       |0 0 1 0|
+                    |0 0 0 1|               |0 0 0 1|
+
+        """
 ```
 ```Python
     def rotacionar(self, model, angle_x, angle_y, angle_z):
@@ -474,51 +483,76 @@ class OpenGLApp:
 ```
 ```Python
     def run(self):
-        
-        self.cube_vao, self.cube_vbo = self.create_cube()
-        model = glm.mat4(1.0)  # Matriz modelo identidade
+        self.cube_vao, self.cube_vbo = self.create_cube() # cria o vao e vbo do cubo
+        model = glm.mat4(1.0)   
+        """Matriz modelo identidade
+            |1 0 0|
+            |0 1 0|
+            |0 0 1|
+        """
         
         while not glfw.window_should_close(self.window):
+            # atualização da tela
             current_frame = glfw.get_time()
             self.delta_time = current_frame - self.last_frame
             self.last_frame = current_frame
 
-            self.process_input(self.window)
+            self.process_input(self.window) # Processa os inputs
 
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # limpa o buffer de cor e profundidade
 
-            glUseProgram(self.shader)
+            glUseProgram(self.shader) # Vincula o programa de shader
             
-            
+            # Define a projeção
             if self.projecao == 0:
                 self.perspectiva()
             else:
                 self.ortogonal()
-            if self.trans_values != [0.0, 0.0, 0.0]:
-                model = self.transladar(model, self.trans_values[0], self.trans_values[1], self.trans_values[2])
-                self.trans_values = [0.0, 0.0, 0.0]
-            if self.rot_values != [0.0, 0.0, 0.0]:
-                model = self.rotacionar(model, self.rot_values[0], self.rot_values[1], self.rot_values[2])
-                self.rot_values = [0.0, 0.0, 0.0]
-            if self.scale_value != 0.0:
-                model = self.escalonar(model, self.scale_value)
+            
+            if self.trans_values != [0.0, 0.0, 0.0]: # Verifica se tem input
+                model = self.transladar(model, self.trans_values[0], self.trans_values[1], self.trans_values[2]) # Aplica translação com os valores do input
+                self.trans_values = [0.0, 0.0, 0.0] # Limpa o input
+            
+            if self.rot_values != [0.0, 0.0, 0.0]: # Verifica se tem input
+                model = self.rotacionar(model, self.rot_values[0], self.rot_values[1], self.rot_values[2]) # Aplica rotação com os valores do input
+                self.rot_values = [0.0, 0.0, 0.0] # Limpa o input
+                
+            if self.scale_value != 0.0: # Verifica se tem input
+                model = self.escalonar(model, self.scale_value) # Aplica escala com os valores do input
                 self.scale_value = 0.0
             
-            glUniform1i(self.usePhongLoc, self.usePhong)
+            glUniform1i(self.usePhongLoc, self.usePhong) # Diz ao shader se deve usar Phong
             
             view = glm.lookAt(self.camera_pos, self.camera_pos + self.camera_front, self.camera_up)
-            
-            glUniformMatrix4fv(self.view_loc, 1, GL_FALSE, glm.value_ptr(view))
-            glUniformMatrix4fv(self.model_loc, 1, GL_FALSE, glm.value_ptr(model))
-            
-            # Vincular textura
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, self.texture)
-            glUniform1i(glGetUniformLocation(self.shader, "ourTexture"), 0)
+            """glm.lookAt:
+            c = camera position
+            t = target position
+            u = camera up vector
+            f = normalize(t - c) 
+            r = normalize(cross(f, u)) 
+            up = cross(r, f) 
 
-            glBindVertexArray(self.cube_vao)
-            glDrawArrays(GL_TRIANGLES, 0, 36)  # Desenha o cubo usando índices
-            glBindVertexArray(0)
+            | rx  ry  rz -dot(r, c) |
+            | ux  uy  uz -dot(up, c) |
+            | -fx -fy -fz  dot(f, c) |
+            |  0   0   0      1      |
+            """
+            
+            glUniformMatrix4fv(self.view_loc, 1, GL_FALSE, glm.value_ptr(view)) #glm.value_ptr: usa ponteiro
+            glUniformMatrix4fv(self.model_loc, 1, GL_FALSE, glm.value_ptr(model))
+            """glUniformMatrix4fv:
+                Manda uma matrix 4x4 de floats pra uma variável uniforme do shader
+                Vertex Shader recebe matrix 4x4 de floats do modelo e da view
+            """
+            
+            
+            glActiveTexture(GL_TEXTURE0) # Ativa o espaço da memoria GL_TEXTURE0
+            glBindTexture(GL_TEXTURE_2D, self.texture) # Vincular textura
+            glUniform1i(glGetUniformLocation(self.shader, "ourTexture"), 0) # Passa para o vertex shader o sampler2d
+
+            glBindVertexArray(self.cube_vao) # Seleciona o vao do cubo
+            glDrawArrays(GL_TRIANGLES, 0, 36)  # Desenha o cubo usando triangulos como forma primitiva | 0: index inicial, (36: numero de vertices)/3 = 12 triangulos.
+            glBindVertexArray(0) # Deseleciona o vao do cubo
 
             glfw.swap_buffers(self.window)
             glfw.poll_events()
@@ -741,128 +775,19 @@ def setup_line(line_points):
 
     return vao, vbo  # Retorna o VAO e o VBO configurados
 ``` 
-
-          
-
 ```Python
 ```          
-<img align="center" alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"
-/>
-Link pra pegar as imagens
-https://devicon.dev/
-|
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tensorflow/tensorflow-original.svg" />
-TensorFlow |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/keras/keras-original.svg" />
-Keras |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/pytorch/pytorch-original.svg" />
-PyTorch |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opencv/opencv-original.svg" />
-OpenCv |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/numpy/numpy-original.svg" />
-NumPy |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/matplotlib/matplotlib-original.svg" />
-MatPlotLib |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/pandas/pandas-original.svg" />
-Pandas |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original.svg" />
-FastAPI |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flask/flask-original.svg" />
-Flask |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/scikitlearn/scikitlearn-original.svg" />
-SciKitLearn |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/googlecloud/googlecloud-original.svg" />
-Google Clouds |
-<img align="center" width=20 height=30 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/json/json-original.svg" />
-Json | and others... |
-
-
  <div style="display: inline_block">
-    <img margin=10px align="center" alt="C" src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white"
-    />
-    <img align="center" alt="C++" src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white"
-    />
-    <img align="center" alt="C#" src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white"
-    />
-    <img align="center" alt="RStudio" src="https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white"
-    />
-    <img align="center" alt="Arduino" src="https://img.shields.io/badge/Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white"
-    /><br><br>
-    <img align="center" alt="Js" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"
-    />
-    <img align="center" alt="TypeScript" src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white"
-    />
-    <img align="center" alt="html5" src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"
-    />
-    <img align="center" alt="Node.js" src="https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white"
-    />
-    <img align="center" alt="Django" src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"
-    />
-    <a href="https://www.heroku.com/" target="_blank"><img align="center" alt="Trello" src="https://img.shields.io/badge/Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white" target="_blank">
-    </a><br>
+    <img align="center" alt="C++" src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white">
+    <a href="https://code.visualstudio.com/" target="_blank"><img src="https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white" target="_blank"></a>
 
  </div>
 
- ## Database Preferences
-
-<div style="display: inline_block">   
-    <a href="https://www.sqlite.org/" target="_blank"><img src="https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white" target="_blank"></a>
-    <a href="https://www.mysql.com/" target="_blank"><img src="https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white" target="_blank"></a>
-    <a href="https://www.mongodb.com/" target="_blank"><img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" target="_blank"></a>
-    <a href="https://www.postgresql.org/" target="_blank"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" target="_blank"></a>
-</div><br>
-
-# Main Projects
-
-[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=NavajasThomaz&repo=TumorVision&theme=transparent)](https://github.com/NavajasThomaz/TumorVision)
-
-[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=NavajasThomaz&repo=PriceTracker&theme=transparent)](https://github.com/NavajasThomaz/PriceTracker)
-
-[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=NavajasThomaz&repo=IA_KNearest_Hydrometer_Reader&theme=transparent)](https://github.com/NavajasThomaz/IA_KNearest_Hydrometer_Reader)
-
-# Most used IDE's
-
-<div>   
-    <a href="https://www.jetbrains.com/pycharm/" target="_blank"><img src="https://img.shields.io/badge/PyCharm-000000.svg?&style=for-the-badge&logo=PyCharm&logoColor=white" target="_blank"></a>
-    <a href="https://colab.research.google.com/" target="_blank"><img src="https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252" target="_blank"></a>
-    <a href="https://visualstudio.microsoft.com/pt-br/downloads/" target="_blank"><img src="https://img.shields.io/badge/Visual_Studio-5C2D91?style=for-the-badge&logo=visual%20studio&logoColor=white" target="_blank"></a>
-    <a href="https://code.visualstudio.com/" target="_blank"><img src="https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white" target="_blank"></a>
-    <a href="https://posit.co/download/rstudio-desktop/" target="_blank"><img src="https://img.shields.io/badge/RStudio-75AADB?style=for-the-badge&logo=RStudio&logoColor=white" target="_blank"></a><br>
-    <a href="https://www.gitpod.io/" target="_blank"><img src="https://img.shields.io/badge/Gitpod-000000?style=for-the-badge&logo=gitpod&logoColor=#FFAE33" target="_blank"></a>
-    <a href="https://eclipseide.org/" target="_blank"><img src="https://img.shields.io/badge/Eclipse-2C2255?style=for-the-badge&logo=eclipse&logoColor=white" target="_blank"></a>
-    <a href="https://www.arduino.cc/en/software" target="_blank"><img src="https://img.shields.io/badge/Arduino_IDE-00979D?style=for-the-badge&logo=arduino&logoColor=white" target="_blank"></a>
-    <a href="https://notepad-plus-plus.org/downloads/" target="_blank"><img src="https://img.shields.io/badge/Notepad++-90E59A.svg?style=for-the-badge&logo=notepad%2B%2B&logoColor=black" target="_blank"></a>
-    <a href="https://www.sublimetext.com/" target="_blank"><img src="https://img.shields.io/badge/sublime_text-%23575757.svg?&style=for-the-badge&logo=sublime-text&logoColor=important" target="_blank"></a>
-</div><br>
 
 
-# Workspace Specs 💻
- <div>
-    <img align="center" alt="GPU" src="https://img.shields.io/badge/NVIDIA-RTX2070 Super-76B900?style=for-the-badge&logo=nvidia&logoColor=white"
-    />
-    <img align="center" alt="CPU" src="https://img.shields.io/badge/AMD-Ryzen_7_5800X-ED1C24?style=for-the-badge&logo=amd&logoColor=white"
-    />
-    <img align="center" alt="OS" src="https://img.shields.io/badge/Windows-10 Pro-0078D6?style=for-the-badge&logo=windows&logoColor=white"
-    />
- </div><br>
+<details open>
+<summary>
 
+# Instruções</summary>
+</details>
 
-# 🎮 Game Develop 👾
-
-My journey begins in 2014 when I was just 12 years old, my parents realized that I had a great affinity with electronics and especially video games, so they decided to take advantage of this and enrolled me in the first programming school called Supergeeks.
-
-
-<img class="center" alt="SuperGeeks" src="https://supergeeks.com.br/images/logo_SG_com_borda.svg?imwidth=256"
-/><br>
-
-5 years later, with a course load of 264 hours, I graduated from the course having learned in theory and practice the best tools for developing 2D, 3D, VA and VR games such as Unity and Unreal.
-
-
-<div class="mycontainer center">
-    <div>
-        <img width=300 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/unity/unity-original-wordmark.svg" />
-    </div>
-    <div>
-        <img width=300 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/unrealengine/unrealengine-original-wordmark.svg" />
-    </div>
-</div>

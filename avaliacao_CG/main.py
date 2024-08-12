@@ -11,29 +11,6 @@ from PIL import Image  # Biblioteca para manipulação de imagens
 SCREEN_WIDTH = 1280  # Define a largura da tela
 SCREEN_HEIGHT = 720  # Define a altura da tela
 
-def create_texture(image):
-    """ Cria uma textura OpenGL a partir de um objeto Image. """
-    texture = glGenTextures(1)  # Gera um ID para uma nova textura
-    glBindTexture(GL_TEXTURE_2D, texture)  # Vincula a textura como uma textura 2D
-    glTexImage2D(GL_TEXTURE_2D,  # Define os dados da imagem para a textura
-                 0, # 
-                 GL_RGBA, # formato da textura
-                 image.width, # largura
-                 image.height, # altura
-                 0, # 
-                 GL_RGBA, #
-                 GL_UNSIGNED_BYTE, 
-                 image.tobytes())
-    # Define parâmetros de filtragem da textura
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glBindTexture(GL_TEXTURE_2D, 0)  # Desvincula a textura
-    return texture  # Retorna o ID da textura
-
-def load_image(filepath):
-    """ Carrega uma imagem e retorna como um objeto Image. """
-    return Image.open(filepath).convert('RGBA')  # Abre e converte a imagem para RGBA
-
 class StartScreen:
     def __init__(self):
         self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Tela Inicial", None, None)# Cria uma janela GLFW
@@ -207,6 +184,37 @@ class OpenGLApp:
 
         glBindVertexArray(0) # Desvincula o vao
         return vao, vbo
+
+    def create_texture(self, texture_path):
+        """ Cria uma textura OpenGL a partir de um objeto Image. """
+        texture = glGenTextures(1)  # Gera um ID para uma nova textura
+        glBindTexture(GL_TEXTURE_2D, texture)  # Vincula a textura como uma textura 2D
+
+        # Define parâmetros de wrapping da textura
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+        # Define parâmetros de filtragem da textura
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        # Carrega a imagem
+        image = Image.open(texture_path)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        img_data = image.convert("RGBA").tobytes()
+        glTexImage2D(GL_TEXTURE_2D,  # Define os dados da imagem para a textura
+                    0, # 
+                    GL_RGBA, # formato da textura
+                    image.width, # largura
+                    image.height, # altura
+                    0, # 
+                    GL_RGBA, #
+                    GL_UNSIGNED_BYTE, 
+                    img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        glBindTexture(GL_TEXTURE_2D, 0)  # Desvincula a textura
+        return texture # Retorna o ID da textura
 
     def create_shader_program(self, vertex_file_path, fragment_file_path):
         """ Compila e vincula um programa de shader a partir de arquivos de shader. """
@@ -447,29 +455,6 @@ class OpenGLApp:
             glfw.poll_events()
 
         glfw.terminate()
-        
-
-    def create_texture(self, texture_path):
-        texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, texture)
-
-        # Define parâmetros de wrapping da textura
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-
-        # Define parâmetros de filtragem da textura
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        # Carrega a imagem
-        image = Image.open(texture_path)
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        img_data = image.convert("RGBA").tobytes()
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
-        glGenerateMipmap(GL_TEXTURE_2D)
-
-        glBindTexture(GL_TEXTURE_2D, 0)
-        return texture
 
 if __name__ == "__main__":
     if not glfw.init():

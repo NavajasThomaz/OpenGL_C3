@@ -1,0 +1,49 @@
+@startuml
+class StartScreen {
+    show()
+        window
+    impl
+    start_game
+    start_game
+    __init__()
+}
+class OpenGLApp {
+    create_cube()
+    create_texture()
+    create_shader_program()
+    compile_shader()
+    mouse_callback()
+    process_input()
+    perspectiva()
+    ortogonal()
+    transladar()
+    rotacionar()
+    escalonar()
+    toggle_phong()
+    toggle_gouraud()
+    toggle_raster()
+    run()
+        window
+    projecao
+    scale_value
+    usePhong
+    useGouraud
+    useRaster
+    shader
+    usePhongLoc
+    useGouraudLoc
+    projection_loc
+    view_loc
+    model_loc
+    camera_pos
+    camera_front
+    camera_up
+    pitch
+    last_x
+    last_y
+    delta_time
+    last_frame
+    texture
+    __init__()
+}
+@enduml
