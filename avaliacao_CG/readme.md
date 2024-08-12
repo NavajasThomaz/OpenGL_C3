@@ -62,10 +62,6 @@ Linguagem escolhida
 Biblioteca gráfica para renderização de gráficos 3D.
 </div>
 <div>
-<img align="center" width=100 src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
-linguagem de programação utilizada para implementar os Shaders.
-</div>
-<div>
 <img align="center" width=100 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/numpy/numpy-original-wordmark.svg" />
 Biblioteca numérica para operar com vetores e matrizes.
 </div>
@@ -101,6 +97,11 @@ SCREEN_WIDTH = 1280 # Constantes para definir o tamanho da janela
 SCREEN_HEIGHT = 720 #
 ```
 2. **Configuração do ambiente:** Fizemos duas classes, uma para janela inicial e outra para a aplicação da OpenGL.
+
+<div align="center">
+<img src="https://github.com/NavajasThomaz/OpenGL_C3/blob/main/avaliacao_CG/Diagrama_das_Classes.png?raw=true"/>
+</div>
+
 
 - Janela inicial
 ```Python
@@ -205,7 +206,7 @@ class OpenGLApp:
         self.texture = self.create_texture("Textures/logoFurg.png")
 ```
 
-<div>
+
 
 #### Criação do cubo
 
@@ -301,14 +302,126 @@ class OpenGLApp:
 <div align='center'>
 <img align="center" height=300 src="https://docs.hektorprofe.net/cdn/graficos3d/image-84.png" />
 <img align="center" width=373 src="https://docs.hektorprofe.net/cdn/graficos3d/image-82.png" />
-
 </div>
 
+
+#### Criação da textura
+
+```Python
+from PIL import image
+```
+<div align='center'>
+<img align="center"  src="https://pillow.readthedocs.io/en/stable/_static/pillow-logo.png" />
+
+Utilizamos a biblioteca pillow para ler a imagem png da textura e converter para RGBA.
 </div>
+
+
+```Python
+    def create_texture(self, texture_path):
+        """ Cria uma textura OpenGL a partir de um objeto Image. """
+        texture = glGenTextures(1)  # Gera um ID para uma nova textura
+        glBindTexture(GL_TEXTURE_2D, texture)  # Vincula a textura como uma textura 2D
+
+        # Define parâmetros de wrapping da textura
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+        # Define parâmetros de filtragem da textura
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+        # Carrega a imagem
+        image = Image.open(texture_path)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        img_data = image.convert("RGBA").tobytes()
+        glTexImage2D(GL_TEXTURE_2D,  # Define os dados da imagem para a textura
+                    0,
+                    GL_RGBA, # formato da textura
+                    image.width, # largura
+                    image.height, # altura
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE, 
+                    img_data)
+        glGenerateMipmap(GL_TEXTURE_2D)
+
+        glBindTexture(GL_TEXTURE_2D, 0)  # Desvincula a textura
+        return texture # Retorna o ID da textura
+```
+
+#### Criação e compilação dos shaders
+
+Utlizamos 2 shaders programados em Opengl Shading Language (GLSL)
+
+**Vertex shaders** ajustam a posição e os atributos dos vértices para definir a forma dos objetos 3D.
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 position; // Posição do vértice
+layout (location = 1) in vec2 texCoord; // Coordenadas de textura
+
+out vec2 TexCoord; // Envia as coordenadas de textura para o fragment shader
+
+uniform mat4 projection; // Matriz de projeção
+uniform mat4 view; // Matriz de visualização
+uniform mat4 model; // Matriz de modelo
+
+void main() {
+    gl_Position = projection * view * model * vec4(position, 1.0); // Aplica as matrizes
+    TexCoord = texCoord; // Passa as coordenadas de textura para o fragment shader
+}
+```
+
+ **Fragment shaders** calculam a cor e os detalhes de cada pixel, permitindo efeitos como texturização e iluminação.
+
+```glsl
+#version 330 core
+
+in vec3 Normal; // Normal da superfície
+in vec3 FragPos;  // Posição do fragmento no espaço
+in vec3 ViewPos; // Posição da câmera
+in vec2 TexCoord;
+
+out vec4 FragColor;
+
+uniform vec3 lightPos; // Posição da luz
+uniform vec3 lightColor; // Cor da luz
+uniform bool usePhong; // Habilitar/Desabilitar Phong
+uniform sampler2D ourTexture; // shader da classe python
+
+void main()
+{
+    vec4 color = texture(ourTexture, TexCoord); // Vincula o fragmento com a textura
+
+    if (usePhong) {
+        // Luz ambiente
+        float ambientStrength = 0.9;
+        vec3 ambient = ambientStrength * lightColor;
+
+        // Luz difusa
+        vec3 norm = normalize(Normal);
+        vec3 lightDir = normalize(lightPos - FragPos);
+        float diff = max(dot(norm, lightDir), 0.0);
+        vec3 diffuse = diff * lightColor;
+
+        // Luz especular (simplificada)
+        float specularStrength = 0.5;
+        vec3 viewDir = normalize(ViewPos - FragPos);
+        vec3 reflectDir = reflect(-lightDir, norm);  
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+        vec3 specular = specularStrength * spec * lightColor;  
+        vec3 result = (ambient + diffuse + specular) * color.rgb;
+        FragColor = vec4(result, 1.0);
+    } else {
+        FragColor = color; // Cor da textura sem iluminação
+    }
+}
+```
 
 ```Python
     def create_shader_program(self, vertex_file_path, fragment_file_path):
-        """ Compila e vincula um programa de shader a partir de arquivos de shader. """
+        """Compila e vincula um programa de shader a partir de arquivos de shader"""
         vertex_shader = self.compile_shader(open(vertex_file_path).read(), GL_VERTEX_SHADER)
         fragment_shader = self.compile_shader(open(fragment_file_path).read(), GL_FRAGMENT_SHADER)
         shader_program = glCreateProgram()
@@ -339,6 +452,9 @@ class OpenGLApp:
 
         return shader
 ```
+
+#### Inputs do usuário
+
 ```Python
     def mouse_callback(self, window, xpos, ypos):
         xoffset = xpos - self.last_x
@@ -434,6 +550,9 @@ class OpenGLApp:
         if glfw.get_key(window, glfw.KEY_G) == glfw.PRESS:
             self.toggle_gouraud()
 ```
+
+#### Projeções
+
 ```Python
     def perspectiva(self):
         projection = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
@@ -444,6 +563,9 @@ class OpenGLApp:
         projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
         glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
 ```
+
+####
+
 ```Python
     def transladar(self, model, direcao_x, direcao_y, direcao_z):
         return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
@@ -559,30 +681,7 @@ class OpenGLApp:
 
         glfw.terminate()
 ```
-```Python
-    def create_texture(self, texture_path):
-        texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, texture)
 
-        # Define parâmetros de wrapping da textura
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-
-        # Define parâmetros de filtragem da textura
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-        # Carrega a imagem
-        image = Image.open(texture_path)
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        img_data = image.convert("RGBA").tobytes()
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
-        glGenerateMipmap(GL_TEXTURE_2D)
-
-        glBindTexture(GL_TEXTURE_2D, 0)
-        return texture
-
-```
 
 2. **Criação da escada:** Criar o modelo do cubo personalizado utilizando vértices e faces.
 3. **Renderização da escada:** Renderizar a escada utilizando OpenGL.
