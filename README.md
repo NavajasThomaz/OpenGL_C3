@@ -1,4 +1,4 @@
-<img align="center" width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
+<img align="center" style='position: fixed' width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
 <img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
@@ -32,9 +32,14 @@
     <a href="https://github.com/DeniseValeriaVelarde" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" target="_blank"></a>
 
 </div>
+
 <div>
     <details open>
         <summary>
+
+
+
+
 
 # Sumário</summary>
 
@@ -209,6 +214,8 @@ class OpenGLApp:
 
 
 #### Criação do cubo
+
+
 
 ```Python
     def create_cube(self):
