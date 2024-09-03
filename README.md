@@ -84,14 +84,15 @@ Essa seção explica o passo a passo da implementação do programa em OpenGL.
 
 1. **Bibliotecas utilizadas:** Na introdução falamos sobre as ferramentas que utilizamos e aqui mostraremos as bibliotecas utilizadas importadas no inicio do código.
 ```Python
-import glm # utilizado para operações de vetores e matrizes
-import glfw # utilizado para gerenciar janelas, eventos
-import imgui # utilizado para renderização de gráficos 3D
-import ctypes # Biblioteca para interação com C/C++
-from OpenGL.GL import * # utilizado para renderização de gráficos 3D
-import numpy as np # utilizado para operar com vetores e matrizes
-from PIL import Image # utilizado para carregar imagens
-from imgui.integrations.glfw import GlfwRenderer # utilizado para renderização de gráficos 3D
+import glfw  # Importa a biblioteca GLFW para criar janelas e gerenciar eventos
+import imgui  # Importa a biblioteca ImGui para criar interfaces gráficas
+import math  # Biblioteca para operações matemáticas
+import glm  # Biblioteca para operações matemáticas de gráficos
+import ctypes  # Biblioteca para interação com C/C++
+import numpy as np  # Biblioteca para manipulação de arrays
+from imgui.integrations.glfw import GlfwRenderer  # Renderer de ImGui para GLFW
+from OpenGL.GL import *  # Importa todas as funções da biblioteca OpenGL
+from PIL import Image  # Biblioteca para manipulação de imagens
 
 SCREEN_WIDTH = 1280 # Constantes para definir o tamanho da janela
 SCREEN_HEIGHT = 720 #
@@ -153,14 +154,10 @@ class OpenGLApp:
         # Instancia a janela do glfw
         self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "C3_Logo", None, None)
         
-        
         self.projecao = 0 # Tipo de projeção atual | 0 perspectiva, 1 ortogonal
         self.trans_values = [0.0, 0.0, 0.0] # Vetor de translação
         self.rot_values = [0.0, 0.0, 0.0] # Vetor de rotação
         self.scale_value = 0.0 # Coeficiente de escala
-        self.usePhong = False
-        self.useGouraud = False
-        self.useRaster = False
         
         if not self.window:
             glfw.terminate()
@@ -178,16 +175,13 @@ class OpenGLApp:
         # Compile the shaders
         self.shader = self.create_shader_program("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl")
 
-        # Iluminação Phong
-        self.usePhongLoc = glGetUniformLocation(self.shader, "usePhong")
-        
-        # Tonalização Gouraud
-        self.useGouraudLoc = glGetUniformLocation(self.shader, "useGouraud")
-        
         # Get uniform locations
         self.projection_loc = glGetUniformLocation(self.shader, "projection") # Localização da projeção
         self.view_loc = glGetUniformLocation(self.shader, "view") # Localização da view
         self.model_loc = glGetUniformLocation(self.shader, "model") # Localização da model
+        self.luz_pos_loc = glGetUniformLocation(self.shader, "lightPos") # Localização da posição da luz
+        self.luz_cor_loc = glGetUniformLocation(self.shader, "lightColor") # Localização das cores da luz
+        self.camera_pos_loc = glGetUniformLocation(self.shader, "viewPos") # Localização da posição da camera
 
         # Camera settings
         self.camera_pos = glm.vec3(0.0, 1.0, 3.0) # Poisção inicial
@@ -216,7 +210,7 @@ class OpenGLApp:
 
 <div align='center'>
 
-Essa função cria o **Vertex Array Object** e o **Vertex Buffer Object** do cubo, ja com o mapeamento de coordenadas das texturas.
+Essa função cria o **Vertex Array Object** e o **Vertex Buffer Object** do cubo, ja com o mapeamento de coordenadas das texturas e as normais.
 
 <img src="https://blogger.googleusercontent.com/img/a/AVvXsEgHH1F9U8J1GdqKNNxOnkc1eu8rhuDOYhEhhkzNagpHdu5S4Uha9x-i11CQvy2Wvj8nm4TEgc7lv-hQZ993nqhiE6-hIki6_9NvMY0Valt8CLD9Dy-PH6qufiKLbVshiT4ZFARznVHgjNL0vPyqET1-Vt0FRR6WYNZ1Xunuz6brCWlgTJEyxqZBp4dm=w400-h175"/>
 
@@ -229,84 +223,95 @@ Essa função cria o **Vertex Array Object** e o **Vertex Buffer Object** do cub
 
 ```Python
     def create_cube(self):
-        """Cria um cubo com textura."""
+        """Cria um cubo com coordenadas de textura e vetores normais."""
         vertices = [
-            # x     y     z     u    v
-            -0.5, -0.5, -0.5,  0.0, 0.0,
-             0.5, -0.5, -0.5,  1.0, 0.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-            -0.5,  0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 0.0,
+            # x     y     z     u    v    norx nory norz
+            -0.5, -0.5, -0.5,  0.0, 0.0,  0.0, 0.0, -1.0,
+             0.5, -0.5, -0.5,  1.0, 0.0,  0.0, 0.0, -1.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 0.0, -1.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 0.0, -1.0,
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 0.0, -1.0,
+            -0.5, -0.5, -0.5,  0.0, 0.0,  0.0, 0.0, -1.0,
 
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 1.0,
-             0.5,  0.5,  0.5,  1.0, 1.0,
-            -0.5,  0.5,  0.5,  0.0, 1.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, 0.0, 1.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, 0.0, 1.0,
+             0.5,  0.5,  0.5,  1.0, 1.0,  0.0, 0.0, 1.0,
+             0.5,  0.5,  0.5,  1.0, 1.0,  0.0, 0.0, 1.0,
+            -0.5,  0.5,  0.5,  0.0, 1.0,  0.0, 0.0, 1.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, 0.0, 1.0,
 
-            -0.5,  0.5,  0.5,  1.0, 0.0,
-            -0.5,  0.5, -0.5,  1.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-            -0.5,  0.5,  0.5,  1.0, 0.0,
+            -0.5,  0.5,  0.5,  1.0, 0.0, -1.0, 0.0, 0.0,
+            -0.5,  0.5, -0.5,  1.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0, -1.0, 0.0, 0.0,
+            -0.5,  0.5,  0.5,  1.0, 0.0, -1.0, 0.0, 0.0,
 
-             0.5,  0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5,  0.5,  0.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  1.0, 0.0, 0.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5, -0.5,  0.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5, -0.5,  0.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5,  0.5,  0.0, 0.0,  1.0, 0.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  1.0, 0.0, 0.0,
 
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5, -0.5,  1.0, 1.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0,  0.0, -1.0, 0.0,
+             0.5, -0.5, -0.5,  1.0, 1.0,  0.0, -1.0, 0.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, -1.0, 0.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, -1.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, -1.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0,  0.0, -1.0, 0.0,
 
-            -0.5,  0.5, -0.5,  0.0, 1.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
-            -0.5,  0.5,  0.5,  0.0, 0.0,
-            -0.5,  0.5, -0.5,  0.0, 1.0
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 1.0, 0.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  0.0, 1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  0.0, 1.0, 0.0,
+            -0.5,  0.5,  0.5,  0.0, 0.0,  0.0, 1.0, 0.0,
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 1.0, 0.0
         ]
         vertices = np.array(vertices, dtype=np.float32)
 
-        
         vao = glGenVertexArrays(1) # Vertex Array Object
         vbo = glGenBuffers(1) # Vertex Buffer Object
         
-
         glBindVertexArray(vao) # Vincula o vao
         glBindBuffer(GL_ARRAY_BUFFER, vbo) # Vincula o tipo de buffer
         glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW) # Envia os dados dos vértices para o buffer
 
         # Posição dos vértices
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
         """
         Aponta para os valores de coordenadas
         vertices = [ x     y     z
-                   -0.5, -0.5, -0.5,  0.0, 0.0,
-                    0.5, -0.5, -0.5,  1.0, 0.0,
-                    0.5,  0.5, -0.5,  1.0, 1.0,
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
                     ...
                    ]
         """
         
         # Coordenadas de textura
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
         glEnableVertexAttribArray(1)
         """
         Aponta para os valores de texturas
         vertices = [                    u    v
-                   -0.5, -0.5, -0.5,  0.0, 0.0,
-                    0.5, -0.5, -0.5,  1.0, 0.0,
-                    0.5,  0.5, -0.5,  1.0, 1.0,
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
+                    ...
+                   ]
+        """
+
+        # Vetores das normais
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(5 * vertices.itemsize))
+        glEnableVertexAttribArray(1)
+        """
+        Aponta para os valores dos vetores normais
+        vertices = [                             x    y    z
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
                     ...
                    ]
         """
@@ -380,17 +385,28 @@ Utlizamos 2 shaders programados em Opengl Shading Language (GLSL)
 #version 330 core
 layout (location = 0) in vec3 position; // Posição do vértice
 layout (location = 1) in vec2 texCoord; // Coordenadas de textura
+layout (location = 2) in vec3 normal; // Normal
 
 out vec2 TexCoord; // Envia as coordenadas de textura para o fragment shader
+out vec3 Normal; // Envia o vetor da normal para o fragment shader
+out vec3 ViewDir; // Envia o vetor 
+out vec3 LightDir; // Envia o vetor de direção da luz
 
 uniform mat4 projection; // Matriz de projeção
 uniform mat4 view; // Matriz de visualização
 uniform mat4 model; // Matriz de modelo
+uniform vec3 lightPos; // Vetor de posição da luz
+uniform vec3 viewPos; // Posição da câmera
 
 void main() {
     gl_Position = projection * view * model * vec4(position, 1.0); // Aplica as matrizes
     TexCoord = texCoord; // Passa as coordenadas de textura para o fragment shader
+    vec3 FragPos = vec3(model * vec4(position, 1.0));
+    Normal = mat3(transpose(inverse(model))) * normal;
+    LightDir = normalize(lightPos - FragPos);
+    ViewDir = normalize(viewPos - FragPos);
 }
+
 ```
 <div align='center'>
 
@@ -401,43 +417,36 @@ void main() {
 #version 330 core
 
 in vec3 Normal; // Normal da superfície
-in vec3 FragPos;  // Posição do fragmento no espaço
-in vec3 ViewPos; // Posição da câmera
 in vec2 TexCoord;
+in vec3 lightDir;
+in vec3 viewDir;
 
 out vec4 FragColor;
 
-uniform vec3 lightPos; // Posição da luz
 uniform vec3 lightColor; // Cor da luz
-uniform bool usePhong; // Habilitar/Desabilitar Phong
-uniform sampler2D ourTexture; // shader da classe python
+uniform sampler2D ourTexture;
 
 void main()
 {
-    vec4 color = texture(ourTexture, TexCoord); // Vincula o fragmento com a textura
+    vec4 color = texture(ourTexture, TexCoord);
 
-    if (usePhong) {
-        // Luz ambiente
-        float ambientStrength = 0.9;
-        vec3 ambient = ambientStrength * lightColor;
+    // Luz ambiente
+    float ambientStrength = 0.9;
+    vec3 ambient = ambientStrength * lightColor;
 
-        // Luz difusa
-        vec3 norm = normalize(Normal);
-        vec3 lightDir = normalize(lightPos - FragPos);
-        float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * lightColor;
+    // Luz difusa
+    vec3 norm = normalize(Normal);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
 
-        // Luz especular (simplificada)
-        float specularStrength = 0.5;
-        vec3 viewDir = normalize(ViewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);  
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-        vec3 specular = specularStrength * spec * lightColor;  
-        vec3 result = (ambient + diffuse + specular) * color.rgb;
-        FragColor = vec4(result, 1.0);
-    } else {
-        FragColor = color; // Cor da textura sem iluminação
-    }
+    // Luz especular (simplificada)
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * lightColor;  
+
+    vec3 result = (ambient + diffuse + specular) * color.rgb;
+    FragColor = vec4(result, 1.0);
+
 }
 ```
 <div align='center'>
@@ -479,6 +488,329 @@ Utilizamos 2 funções dentro da nossa classe para criar e compilar os shaders.
         return shader_program
 ```
 
+#### Translação, Rotação e Escala
+
+<div align='center'>
+As seguintes funções utilizão funções disponiveis pela glm para calcular a movimentação e escala do cubo.
+</div>
+
+**Translação**
+```Python
+    def transladar(self, model, direcao_x, direcao_y, direcao_z):
+        #print(model, direcao_x, direcao_y, direcao_z, "\n")
+        """
+            model = [1][0][0][0]    # Modelo inicial
+                    [0][1][0][0]
+                    [0][0][1][0]
+                    [0][0][0][1]
+            
+            model[3] = [0]          # Translação
+                       [0]
+                       [0]
+                       [1]
+        """
+        model[3][0] += direcao_x
+        model[3][1] += direcao_y
+        model[3][2] += direcao_z
+        """           
+            model=  |1 0 0 0 + direcao_x|
+                    |0 1 0 0 + direcao_y|
+                    |0 0 1 0 + direcao_z|
+                    |0 0 0 1|
+        """
+        return model
+        """
+        return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
+         glm.translate
+            Assumindo que o modelo esta como indetidade
+            model=  |1 0 0 direcao_x|       |1 0 0 0|
+                    |0 1 0 direcao_y|   *   |0 1 0 0|
+                    |0 0 1 direcao_z|       |0 0 1 0|
+                    |0 0 0 1|               |0 0 0 1|
+
+        """v
+```
+**Rotaçao**
+```Python
+    def rotacionar(self, model, angle_x, angle_y, angle_z):
+        # Transforma os ângulos de graus para radianos
+        angle_x = glm.radians(angle_x)
+        angle_y = glm.radians(angle_y)
+        angle_z = glm.radians(angle_z)
+
+        # Criação das matrizes de rotação para cada eixo
+        rot_x = glm.mat4(1.0)
+        rot_y = glm.mat4(1.0)
+        rot_z = glm.mat4(1.0)
+        """rot_x/y/z =  
+            [1][0][0][0]    # Rotação inicial
+            [0][1][0][0]
+            [0][0][1][0]
+            [0][0][0][1]
+        """
+        
+        # Rotação em X
+        rot_x[1][1] = glm.cos(angle_x)
+        rot_x[1][2] = -glm.sin(angle_x)
+        rot_x[2][1] = glm.sin(angle_x)
+        rot_x[2][2] = glm.cos(angle_x)
+        """rot_x = 
+                [1] [0]      [0]       [0]
+                [0] [cos(x)] [-sin(x)] [0]
+                [0] [sin(x)] [cos(x)]  [0]
+                [0] [0]      [0]       [1]
+        """
+        
+        # Rotação em Y
+        rot_y[0][0] = glm.cos(angle_y)
+        rot_y[0][2] = glm.sin(angle_y)
+        rot_y[2][0] = -glm.sin(angle_y)
+        rot_y[2][2] = glm.cos(angle_y)
+        """rot_y = 
+                [cos(y)]  [0] [sin(y)] [0]
+                [0]       [1] [0]      [0]
+                [-sin(y)] [0] [cos(y)] [0]
+                [0]       [0] [0]      [1]
+        """
+        
+        # Rotação em Z
+        rot_z[0][0] = glm.cos(angle_z)
+        rot_z[0][1] = -glm.sin(angle_z)
+        rot_z[1][0] = glm.sin(angle_z)
+        rot_z[1][1] = glm.cos(angle_z)
+        """rot_z = 
+                [cos(z)] [-sin(z)] [0] [0]
+                [sin(z)] [cos(z)]  [0] [0]
+                [0]      [0]       [1] [0]
+                [0]      [0]       [0] [1]
+        """
+        
+        # Multiplicação das matrizes na ordem desejada (Z * Y * X * model)
+        model = rot_z * rot_y * rot_x * model 
+
+        return model
+        """glm.rotate
+        model = glm.rotate(model, glm.radians(angle_x), glm.vec3(1.0, 0.0, 0.0))
+        model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
+        model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
+            Rx = | 1  0       0       0 |
+                 | 0  cos(x) -sin(x)  0 |
+                 | 0  sin(x)  cos(x)  0 |
+                 | 0  0       0       1 |
+
+            Ry = | cos(y)  0  sin(y)  0 |
+                 | 0       1  0       0 |
+                 | -sin(y) 0  cos(y)  0 |
+                 | 0       0  0       1 |
+            
+            Rz = | cos(z) -sin(z)  0  0 |
+                 | sin(z)  cos(z)  0  0 |
+                 | 0       0       1  0 |
+                 | 0       0       0  1 |
+        """
+```
+**Escala**
+```Python
+    def escalonar(self, model, escala):
+        model[0][0] *= escala
+        model[1][1] *= escala
+        model[2][2] *= escala
+        """
+        model = [x*escala] [0]        [0][0]    # Modelo inicial
+                [0]        [y*escala] [0][0]
+                [0]        [0][z*escala][0]
+                [0]        [0][0][1]
+        """
+        return model
+        """glm.scale
+        return glm.scale(model, glm.vec3(escala, escala, escala))
+            S = | escala  0       0       0 |
+                | 0       escala  0       0 |
+                | 0       0       escala  0 |
+                | 0       0       0       1 |
+        """
+```
+
+
+#### Projeções
+
+<div align='center'>
+
+**Perspectiva**, utilizamos a função glm.perspective() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D.
+</div>
+
+```Python
+    def perspectiva(self):
+        projection = glm.mat4(1.0)
+        """
+            projection = [1][0][0][0]    # Projeção inicial
+                         [0][1][0][0]
+                         [0][0][1][0]
+                         [0][0][0][1]
+        """
+        projection[0][0] = 1/( math.tan( math.radians(90/2) ) ) / (SCREEN_WIDTH/SCREEN_HEIGHT)
+        projection[1][1] = 1/( math.tan( math.radians(90/2) ) )
+        projection[2][2] = -(100.0 + 0.1) / (100.0 - 0.1)
+        projection[2][3] = -1
+        projection[3][2] = -(2 * 100.0 * 0.1) / (100.0 - 0.1)
+        projection[3][3] = 0
+        """
+            projection = # Projeção de perspectiva
+            [cot(fov/2) / aspect]   [0]             [0]                     [0]    
+            [0]                     [cot(fov/2)]    [0]                     [0]
+            [0]                     [0]             [-(f + n) / (f - n)]    [-(2 * f * n) / (f - n)]
+            [0]                     [0]             [-1]                    [0]
+        """
+        #print(projection)
+        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
+        """glm.perspective
+        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
+        
+        fov = Campo de visão
+        aspect = proporção de aspecto da tela
+        n = Distancia do plano mais proximo
+        f = Distancia do plano mais distante
+
+        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
+
+            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
+
+        Segunda Coluna: Relacionada à escala vertical.
+
+            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
+
+        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
+
+            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
+            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
+
+        Quarta Coluna: Usada para a divisão de perspectiva.
+
+            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
+
+        |cot(fov/2) / aspect   0          0                      0|
+        |0                     cot(fov/2) 0                      0|
+        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
+        |0                     0         -1                      0|
+
+        """
+```
+
+<div align='center'>
+
+**Ortogonal**, utilizamos a função glm.ortho() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D. Esta função da biblioteca GLM cria uma matriz de projeção ortogonal (ou ortográfica). Diferente da projeção em perspectiva, a projeção ortogonal mantém o tamanho dos objetos independentemente da distância da câmera.
+</div>
+
+```Python
+    def ortogonal(self):
+        projection = glm.mat4(1.0)
+        """
+            projection = [1][0][0][0]    # Projeção inicial
+                         [0][1][0][0]
+                         [0][0][1][0]
+                         [0][0][0][1]
+        """
+        projection[0][0] = 2 / (10-(-10))
+        projection[1][1] = 2 / (-10-10)
+        projection[2][2] = -2 / (100.0 - 0.1)
+        projection[3][0] = -((-10 + 10) / (10-(-10)))
+        projection[3][1] = -((-10 + 10) / (-10 - 10))
+        projection[3][2] = -(100.0 + 0.1) / (100.0 - 0.1)
+        """
+            projection = # Projeção ortogonal
+            [2/(right-left)]    [0]                 [0]             [-(right+left)/(right-left)]    
+            [0]                 [2/(top-bottom)]    [0]             [-(top+bottom)/(top-bottom)]
+            [0]                 [0]                 [-2/(far-near)] [-(far+near)/(far-near)]
+            [0]                 [0]                 [0]             [1]
+            
+            [0.1]   [0]     [0]             [0]
+            [0]     [-0.1]  [0]             [0]
+            [0]     [0]     [-0,02002...]   [0]
+            [0]     [0]     [0]             [-1,002002...]
+        """
+        
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
+        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.ortho
+        projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
+        |2/(right-left)    0               0               -(right+left)/(right-left)|
+        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
+        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
+        |0                 0               0               1                         |
+        """
+```
+
+
+#### Iluminação e Tonalização
+<div align='center'>
+O modelo de iluminação Phong e tonalização Gouraud possuem os mesmos calculos utilizando as normais, posição da camera e posição da luz para obter a cor de saida do pixel. A diferença entre elas é de o modelo de Phong realiza esses calculos para cada fragmento, ou seja, dentro do fragment_shader, o que resulta uma melhor performance. Enquanto o modelo de Gouraud realiza os calculos apenas uma vez por vertice, ou seja, dentro do vertex_shader.
+
+</div>
+
+```glsl
+#version 330 core
+layout (location = 0) in vec3 position; // Posição do vértice
+layout (location = 1) in vec2 texCoord; // Coordenadas de textura
+layout (location = 2) in vec3 normal; // Normal
+
+out vec2 TexCoord; // Envia as coordenadas de textura para o fragment shader
+out vec3 Normal; // Envia o vetor da normal para o fragment shader
+out vec3 ViewDir; // Envia o vetor 
+out vec3 LightDir; // Envia o vetor de direção da luz
+
+uniform mat4 projection; // Matriz de projeção
+uniform mat4 view; // Matriz de visualização
+uniform mat4 model; // Matriz de modelo
+uniform vec3 lightPos; // Vetor de posição da luz
+uniform vec3 viewPos; // Posição da câmera
+
+void main() {
+    gl_Position = projection * view * model * vec4(position, 1.0); // Aplica as matrizes
+    TexCoord = texCoord; // Passa as coordenadas de textura para o fragment shader
+    vec3 FragPos = vec3(model * vec4(position, 1.0));
+    Normal = mat3(transpose(inverse(model))) * normal;
+    LightDir = normalize(lightPos - FragPos);
+    ViewDir = normalize(viewPos - FragPos);
+}
+
+```
+```glsl
+#version 330 core
+
+in vec3 Normal; // Normal da superfície
+in vec2 TexCoord;
+in vec3 lightDir;
+in vec3 viewDir;
+
+out vec4 FragColor;
+
+uniform vec3 lightColor; // Cor da luz
+uniform sampler2D ourTexture;
+
+void main()
+{
+    vec4 color = texture(ourTexture, TexCoord);
+
+    // Luz ambiente
+    float ambientStrength = 0.9;
+    vec3 ambient = ambientStrength * lightColor;
+
+    // Luz difusa
+    vec3 norm = normalize(Normal);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+
+    // Luz especular (simplificada)
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * lightColor;  
+
+    vec3 result = (ambient + diffuse + specular) * color.rgb;
+    FragColor = vec4(result, 1.0);
+
+}
+```
 
 #### Inputs do usuário
 
@@ -592,143 +924,6 @@ Funções para processar as entradas de movimento e interações(inputs) do usua
             self.toggle_gouraud()
 ```
 
-#### Projeções
-
-<div align='center'>
-
-**Perspectiva**, utilizamos a função glm.perspective() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D.
-</div>
-
-```Python
-    def perspectiva(self):
-        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
-        # Vincula o resultado da matriz de projeção a uma uniforme no shader
-        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
-        """glm.perspective
-
-        fov = Campo de visão
-        aspect = proporção de aspecto da tela
-        n = Distancia do plano mais proximo
-        f = Distancia do plano mais distante
-
-        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
-
-            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
-
-        Segunda Coluna: Relacionada à escala vertical.
-
-            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
-
-        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
-
-            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
-            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
-
-        Quarta Coluna: Usada para a divisão de perspectiva.
-
-            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
-
-        |cot(fov/2) / aspect   0          0                      0|
-        |0                     cot(fov/2) 0                      0|
-        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
-        |0                     0         -1                      0|
-
-        """
-
-```
-
-<div align='center'>
-
-**Ortogonal**, utilizamos a função glm.ortho() para criar uma matriz de projeção em perspectiva para que simule profundidade em 3D. Esta função da biblioteca GLM cria uma matriz de projeção ortogonal (ou ortográfica). Diferente da projeção em perspectiva, a projeção ortogonal mantém o tamanho dos objetos independentemente da distância da câmera.
-</div>
-
-```Python
-    def ortogonal(self):
-        projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
-        # Vincula o resultado da matriz de projeção a uma uniforme no shader
-        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
-        """glm.ortho
-        
-        |2/(right-left)    0               0               -(right+left)/(right-left)|
-        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
-        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
-        |0                 0               0               1                         |
-        """
-```
-
-#### Translação, Rotação e Escala
-
-<div align='center'>
-As seguintes funções utilizão funções disponiveis pela glm para calcular a movimentação e escala do cubo.
-</div>
-
-**Translação**
-```Python
-    def transladar(self, model, direcao_x, direcao_y, direcao_z):
-        return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
-        """ glm.translate
-            Assumindo que o modelo esta como indetidade
-            model=  |1 0 0 direcao_x|       |1 0 0 0|
-                    |0 1 0 direcao_y|   *   |0 1 0 0|
-                    |0 0 1 direcao_z|       |0 0 1 0|
-                    |0 0 0 1|               |0 0 0 1|
-        """
-```
-**Rotaçao**
-```Python
-    def rotacionar(self, model, angle_x, angle_y, angle_z):
-        # Aplica a rotação em cada eixo separadamente
-        model = glm.rotate(model, glm.radians(angle_x), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
-        model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
-        return model
-        """glm.rotate
-            Rx = | 1  0       0       0 |
-                 | 0  cos(x) -sin(x)  0 |
-                 | 0  sin(x)  cos(x)  0 |
-                 | 0  0       0       1 |
-
-            Ry = | cos(y)  0  sin(y)  0 |
-                 | 0       1  0       0 |
-                 | -sin(y) 0  cos(y)  0 |
-                 | 0       0  0       1 |
-            
-            Rz = | cos(z) -sin(z)  0  0 |
-                 | sin(z)  cos(z)  0  0 |
-                 | 0       0       1  0 |
-                 | 0       0       0  1 |
-        """
-```
-**Escala**
-```Python
-    def escalonar(self, model, escala):
-        return glm.scale(model, glm.vec3(escala, escala, escala))
-        """glm.scale
-            S = | escala  0       0       0 |
-                | 0       escala  0       0 |
-                | 0       0       escala  0 |
-                | 0       0       0       1 |
-        """
-```
-
-#### Iluminação e Tonalização
-<div align='center'>
-As seguintes funções ficam responsáveis por atualizar as variáveis(também as dos shaders) de utilização. Para que seja possível ativar e desativar os modelos durante a execução
-</div>
-
-```Python
-    def toggle_phong(self):
-        self.usePhong = not self.usePhong
-        glUniform1i(self.usePhongLoc, self.usePhong)
-```
-```Python
-    def toggle_gouraud(self):
-        self.useGouraud = not self.useGouraud
-```
-```Python
-    def toggle_raster(self):
-        self.useRaster = not self.useRaster
-```
 
 #### Execução
 
@@ -815,39 +1010,10 @@ As seguintes funções ficam responsáveis por atualizar as variáveis(também a
 
 O resultado final do projeto é um programa que renderiza uma escada 3D com iluminação e tonalização, e que permite ao usuário interagir com ela, movendo-a e escalonando-a.
 
+<div align="center">
+    <img src="https://github.com/NavajasThomaz/OpenGL_C3/blob/main/avaliacao_CG/Resultado.gif?raw=true"/>
+</div>
 
-### Conclusão
-
-Este projeto demonstra a capacidade de utilizar OpenGL para renderizar gráficos 3D, implementar iluminação e tonalização, e criar interação com objetos. O projeto também demonstra a importância de utilizar bibliotecas matemáticas e de gerenciamento de janelas para facilitar o desenvolvimento de programas gráficos.
-
-### Código
-
-O código fonte do projeto está disponível no repositório do GitHub: [link para o repositório](https://github.com/NavajasThomaz/TumorVision).
-
-
-
-
-
-
-- Movimentação
-1. Translação
-```Python
-def transladar(self, model, direcao_x, direcao_y, direcao_z):
-    return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
-```
-### glm.translate
-
-
-
-2. Rotação
-3. Escalonamento
-- Projeção
-4. Perspectiva
-5. Ortogonal
-- Outros
-6. Iluminação (Phong)
-7. Tonalização (Gouraud)
-8. Rasterização (Bresenham)
 
 <div align="center">
 
@@ -997,11 +1163,9 @@ def setup_line(line_points):
 ``` 
 ```Python
 ```          
- <div style="display: inline_block">
-    <img align="center" alt="C++" src="https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white">
-    <a href="https://code.visualstudio.com/" target="_blank"><img src="https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white" target="_blank"></a>
+<div style="display: inline_block">
 
- </div>
+</div>
 
 
 
@@ -1009,5 +1173,9 @@ def setup_line(line_points):
 <summary>
 
 # Instruções</summary>
+
+Nessa seção está o passo a passo de como executar esse projeto em seu própio ambiente.
+Nós rencomendamos montar seu ambiente utilizado o 
+<a href="https://code.visualstudio.com/" target="_blank"><img src="https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white" target="_blank"></a>
 </details>
 

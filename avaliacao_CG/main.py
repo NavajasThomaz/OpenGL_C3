@@ -1,12 +1,15 @@
 import glfw  # Importa a biblioteca GLFW para criar janelas e gerenciar eventos
-from OpenGL.GL import *  # Importa todas as funções da biblioteca OpenGL
 import imgui  # Importa a biblioteca ImGui para criar interfaces gráficas
-from imgui.integrations.glfw import GlfwRenderer  # Renderer de ImGui para GLFW
-import numpy as np  # Biblioteca para manipulação de arrays
+import math  # Biblioteca para operações matemáticas
 import glm  # Biblioteca para operações matemáticas de gráficos
 import ctypes  # Biblioteca para interação com C/C++
+import numpy as np  # Biblioteca para manipulação de arrays
+from imgui.integrations.glfw import GlfwRenderer  # Renderer de ImGui para GLFW
+from OpenGL.GL import *  # Importa todas as funções da biblioteca OpenGL
 from PIL import Image  # Biblioteca para manipulação de imagens
 
+
+# Constantes
 
 SCREEN_WIDTH = 1280  # Define a largura da tela
 SCREEN_HEIGHT = 720  # Define a altura da tela
@@ -45,14 +48,10 @@ class OpenGLApp:
         # Instancia a janela do glfw
         self.window = glfw.create_window(SCREEN_WIDTH, SCREEN_HEIGHT, "C3_Logo", None, None)
         
-        
         self.projecao = 0 # Tipo de projeção atual | 0 perspectiva, 1 ortogonal
         self.trans_values = [0.0, 0.0, 0.0] # Vetor de translação
         self.rot_values = [0.0, 0.0, 0.0] # Vetor de rotação
         self.scale_value = 0.0 # Coeficiente de escala
-        self.usePhong = False
-        self.useGouraud = False
-        self.useRaster = False
         
         if not self.window:
             glfw.terminate()
@@ -69,18 +68,15 @@ class OpenGLApp:
 
         # Compile the shaders
         self.shader = self.create_shader_program("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl")
-
-        # Iluminação Phong
-        self.usePhongLoc = glGetUniformLocation(self.shader, "usePhong")
-        
-        # Tonalização Gouraud
-        self.useGouraudLoc = glGetUniformLocation(self.shader, "useGouraud")
         
         # Get uniform locations
         self.projection_loc = glGetUniformLocation(self.shader, "projection") # Localização da projeção
         self.view_loc = glGetUniformLocation(self.shader, "view") # Localização da view
         self.model_loc = glGetUniformLocation(self.shader, "model") # Localização da model
-
+        self.luz_pos_loc = glGetUniformLocation(self.shader, "lightPos") # Localização da posição da luz
+        self.luz_cor_loc = glGetUniformLocation(self.shader, "lightColor") # Localização das cores da luz
+        self.camera_pos_loc = glGetUniformLocation(self.shader, "viewPos") # Localização da posição da camera
+        
         # Camera settings
         self.camera_pos = glm.vec3(0.0, 1.0, 3.0) # Poisção inicial
         self.camera_front = glm.vec3(0.0, 0.0, -1.0) # Direção inicial
@@ -100,84 +96,95 @@ class OpenGLApp:
         self.texture = self.create_texture("Textures/logoFurg.png")
 
     def create_cube(self):
-        """Cria um cubo com textura."""
+        """Cria um cubo com coordenadas de textura e vetores normais."""
         vertices = [
-            # x     y     z     u    v
-            -0.5, -0.5, -0.5,  0.0, 0.0,
-             0.5, -0.5, -0.5,  1.0, 0.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-            -0.5,  0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 0.0,
+            # x     y     z     u    v    norx nory norz
+            -0.5, -0.5, -0.5,  0.0, 0.0,  0.0, 0.0, -1.0,
+             0.5, -0.5, -0.5,  1.0, 0.0,  0.0, 0.0, -1.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 0.0, -1.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 0.0, -1.0,
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 0.0, -1.0,
+            -0.5, -0.5, -0.5,  0.0, 0.0,  0.0, 0.0, -1.0,
 
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 1.0,
-             0.5,  0.5,  0.5,  1.0, 1.0,
-            -0.5,  0.5,  0.5,  0.0, 1.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, 0.0, 1.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, 0.0, 1.0,
+             0.5,  0.5,  0.5,  1.0, 1.0,  0.0, 0.0, 1.0,
+             0.5,  0.5,  0.5,  1.0, 1.0,  0.0, 0.0, 1.0,
+            -0.5,  0.5,  0.5,  0.0, 1.0,  0.0, 0.0, 1.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, 0.0, 1.0,
 
-            -0.5,  0.5,  0.5,  1.0, 0.0,
-            -0.5,  0.5, -0.5,  1.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-            -0.5,  0.5,  0.5,  1.0, 0.0,
+            -0.5,  0.5,  0.5,  1.0, 0.0, -1.0, 0.0, 0.0,
+            -0.5,  0.5, -0.5,  1.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0, -1.0, 0.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0, -1.0, 0.0, 0.0,
+            -0.5,  0.5,  0.5,  1.0, 0.0, -1.0, 0.0, 0.0,
 
-             0.5,  0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5,  0.5,  0.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  1.0, 0.0, 0.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5, -0.5,  0.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5, -0.5,  0.0, 1.0,  1.0, 0.0, 0.0,
+             0.5, -0.5,  0.5,  0.0, 0.0,  1.0, 0.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  1.0, 0.0, 0.0,
 
-            -0.5, -0.5, -0.5,  0.0, 1.0,
-             0.5, -0.5, -0.5,  1.0, 1.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-             0.5, -0.5,  0.5,  1.0, 0.0,
-            -0.5, -0.5,  0.5,  0.0, 0.0,
-            -0.5, -0.5, -0.5,  0.0, 1.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0,  0.0, -1.0, 0.0,
+             0.5, -0.5, -0.5,  1.0, 1.0,  0.0, -1.0, 0.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, -1.0, 0.0,
+             0.5, -0.5,  0.5,  1.0, 0.0,  0.0, -1.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, 0.0,  0.0, -1.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, 1.0,  0.0, -1.0, 0.0,
 
-            -0.5,  0.5, -0.5,  0.0, 1.0,
-             0.5,  0.5, -0.5,  1.0, 1.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
-             0.5,  0.5,  0.5,  1.0, 0.0,
-            -0.5,  0.5,  0.5,  0.0, 0.0,
-            -0.5,  0.5, -0.5,  0.0, 1.0
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 1.0, 0.0,
+             0.5,  0.5, -0.5,  1.0, 1.0,  0.0, 1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  0.0, 1.0, 0.0,
+             0.5,  0.5,  0.5,  1.0, 0.0,  0.0, 1.0, 0.0,
+            -0.5,  0.5,  0.5,  0.0, 0.0,  0.0, 1.0, 0.0,
+            -0.5,  0.5, -0.5,  0.0, 1.0,  0.0, 1.0, 0.0
         ]
         vertices = np.array(vertices, dtype=np.float32)
 
-        
         vao = glGenVertexArrays(1) # Vertex Array Object
         vbo = glGenBuffers(1) # Vertex Buffer Object
         
-
         glBindVertexArray(vao) # Vincula o vao
         glBindBuffer(GL_ARRAY_BUFFER, vbo) # Vincula o tipo de buffer
         glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW) # Envia os dados dos vértices para o buffer
 
         # Posição dos vértices
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(0))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(0))
         glEnableVertexAttribArray(0)
         """
         Aponta para os valores de coordenadas
         vertices = [ x     y     z
-                   -0.5, -0.5, -0.5,  0.0, 0.0,
-                    0.5, -0.5, -0.5,  1.0, 0.0,
-                    0.5,  0.5, -0.5,  1.0, 1.0,
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
                     ...
                    ]
         """
         
         # Coordenadas de textura
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(3 * vertices.itemsize))
         glEnableVertexAttribArray(1)
         """
         Aponta para os valores de texturas
         vertices = [                    u    v
-                   -0.5, -0.5, -0.5,  0.0, 0.0,
-                    0.5, -0.5, -0.5,  1.0, 0.0,
-                    0.5,  0.5, -0.5,  1.0, 1.0,
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
+                    ...
+                   ]
+        """
+
+        # Vetores das normais
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * vertices.itemsize, ctypes.c_void_p(5 * vertices.itemsize))
+        glEnableVertexAttribArray(1)
+        """
+        Aponta para os valores dos vetores normais
+        vertices = [                             x    y    z
+                   -0.5, -0.5, -0.5,  0.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5, -0.5, -0.5,  1.0, 0.0, 0.0, 0.0, -1.0,
+                    0.5,  0.5, -0.5,  1.0, 1.0, 0.0, 0.0, -1.0,
                     ...
                    ]
         """
@@ -247,6 +254,229 @@ class OpenGLApp:
 
         return shader
 
+    def transladar(self, model, direcao_x, direcao_y, direcao_z):
+        #print(model, direcao_x, direcao_y, direcao_z, "\n")
+        """
+            model = [1][0][0][0]    # Modelo inicial
+                    [0][1][0][0]
+                    [0][0][1][0]
+                    [0][0][0][1]
+            
+            model[3] = [0]          # Translação
+                       [0]
+                       [0]
+                       [1]
+        """
+        model[3][0] += direcao_x
+        model[3][1] += direcao_y
+        model[3][2] += direcao_z
+        """           
+            model=  |1 0 0 0 + direcao_x|
+                    |0 1 0 0 + direcao_y|
+                    |0 0 1 0 + direcao_z|
+                    |0 0 0 1|
+        """
+        return model
+        """
+        return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
+         glm.translate
+            Assumindo que o modelo esta como indetidade
+            model=  |1 0 0 direcao_x|       |1 0 0 0|
+                    |0 1 0 direcao_y|   *   |0 1 0 0|
+                    |0 0 1 direcao_z|       |0 0 1 0|
+                    |0 0 0 1|               |0 0 0 1|
+
+        """
+
+    def rotacionar(self, model, angle_x, angle_y, angle_z):
+        # Transforma os ângulos de graus para radianos
+        angle_x = glm.radians(angle_x)
+        angle_y = glm.radians(angle_y)
+        angle_z = glm.radians(angle_z)
+
+        # Criação das matrizes de rotação para cada eixo
+        rot_x = glm.mat4(1.0)
+        rot_y = glm.mat4(1.0)
+        rot_z = glm.mat4(1.0)
+        """rot_x/y/z =  
+            [1][0][0][0]    # Rotação inicial
+            [0][1][0][0]
+            [0][0][1][0]
+            [0][0][0][1]
+        """
+        
+        # Rotação em X
+        rot_x[1][1] = glm.cos(angle_x)
+        rot_x[1][2] = -glm.sin(angle_x)
+        rot_x[2][1] = glm.sin(angle_x)
+        rot_x[2][2] = glm.cos(angle_x)
+        """rot_x = 
+                [1] [0]      [0]       [0]
+                [0] [cos(x)] [-sin(x)] [0]
+                [0] [sin(x)] [cos(x)]  [0]
+                [0] [0]      [0]       [1]
+        """
+        
+        # Rotação em Y
+        rot_y[0][0] = glm.cos(angle_y)
+        rot_y[0][2] = glm.sin(angle_y)
+        rot_y[2][0] = -glm.sin(angle_y)
+        rot_y[2][2] = glm.cos(angle_y)
+        """rot_y = 
+                [cos(y)]  [0] [sin(y)] [0]
+                [0]       [1] [0]      [0]
+                [-sin(y)] [0] [cos(y)] [0]
+                [0]       [0] [0]      [1]
+        """
+        
+        # Rotação em Z
+        rot_z[0][0] = glm.cos(angle_z)
+        rot_z[0][1] = -glm.sin(angle_z)
+        rot_z[1][0] = glm.sin(angle_z)
+        rot_z[1][1] = glm.cos(angle_z)
+        """rot_z = 
+                [cos(z)] [-sin(z)] [0] [0]
+                [sin(z)] [cos(z)]  [0] [0]
+                [0]      [0]       [1] [0]
+                [0]      [0]       [0] [1]
+        """
+        
+        # Multiplicação das matrizes na ordem desejada (Z * Y * X * model)
+        model = rot_z * rot_y * rot_x * model 
+
+        return model
+        """glm.rotate
+        model = glm.rotate(model, glm.radians(angle_x), glm.vec3(1.0, 0.0, 0.0))
+        model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
+        model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
+            Rx = | 1  0       0       0 |
+                 | 0  cos(x) -sin(x)  0 |
+                 | 0  sin(x)  cos(x)  0 |
+                 | 0  0       0       1 |
+
+            Ry = | cos(y)  0  sin(y)  0 |
+                 | 0       1  0       0 |
+                 | -sin(y) 0  cos(y)  0 |
+                 | 0       0  0       1 |
+            
+            Rz = | cos(z) -sin(z)  0  0 |
+                 | sin(z)  cos(z)  0  0 |
+                 | 0       0       1  0 |
+                 | 0       0       0  1 |
+        """
+    
+    def escalonar(self, model, escala):
+        model[0][0] *= escala
+        model[1][1] *= escala
+        model[2][2] *= escala
+        """
+        model = [x*escala] [0]        [0][0]    # Modelo inicial
+                [0]        [y*escala] [0][0]
+                [0]        [0][z*escala][0]
+                [0]        [0][0][1]
+        """
+        return model
+        """glm.scale
+        return glm.scale(model, glm.vec3(escala, escala, escala))
+            S = | escala  0       0       0 |
+                | 0       escala  0       0 |
+                | 0       0       escala  0 |
+                | 0       0       0       1 |
+        """
+
+    def perspectiva(self):
+        projection = glm.mat4(1.0)
+        """
+            projection = [1][0][0][0]    # Projeção inicial
+                         [0][1][0][0]
+                         [0][0][1][0]
+                         [0][0][0][1]
+        """
+        projection[0][0] = 1/( math.tan( math.radians(90/2) ) ) / (SCREEN_WIDTH/SCREEN_HEIGHT)
+        projection[1][1] = 1/( math.tan( math.radians(90/2) ) )
+        projection[2][2] = -(100.0 + 0.1) / (100.0 - 0.1)
+        projection[2][3] = -1
+        projection[3][2] = -(2 * 100.0 * 0.1) / (100.0 - 0.1)
+        projection[3][3] = 0
+        """
+            projection = # Projeção de perspectiva
+            [cot(fov/2) / aspect]   [0]             [0]                     [0]    
+            [0]                     [cot(fov/2)]    [0]                     [0]
+            [0]                     [0]             [-(f + n) / (f - n)]    [-(2 * f * n) / (f - n)]
+            [0]                     [0]             [-1]                    [0]
+        """
+        #print(projection)
+        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
+        """glm.perspective
+        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
+        
+        fov = Campo de visão
+        aspect = proporção de aspecto da tela
+        n = Distancia do plano mais proximo
+        f = Distancia do plano mais distante
+
+        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
+
+            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
+
+        Segunda Coluna: Relacionada à escala vertical.
+
+            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
+
+        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
+
+            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
+            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
+
+        Quarta Coluna: Usada para a divisão de perspectiva.
+
+            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
+
+        |cot(fov/2) / aspect   0          0                      0|
+        |0                     cot(fov/2) 0                      0|
+        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
+        |0                     0         -1                      0|
+
+        """
+    
+    def ortogonal(self):
+        projection = glm.mat4(1.0)
+        """
+            projection = [1][0][0][0]    # Projeção inicial
+                         [0][1][0][0]
+                         [0][0][1][0]
+                         [0][0][0][1]
+        """
+        projection[0][0] = 2 / (10-(-10))
+        projection[1][1] = 2 / (-10-10)
+        projection[2][2] = -2 / (100.0 - 0.1)
+        projection[3][0] = -((-10 + 10) / (10-(-10)))
+        projection[3][1] = -((-10 + 10) / (-10 - 10))
+        projection[3][2] = -(100.0 + 0.1) / (100.0 - 0.1)
+        """
+            projection = # Projeção ortogonal
+            [2/(right-left)]    [0]                 [0]             [-(right+left)/(right-left)]    
+            [0]                 [2/(top-bottom)]    [0]             [-(top+bottom)/(top-bottom)]
+            [0]                 [0]                 [-2/(far-near)] [-(far+near)/(far-near)]
+            [0]                 [0]                 [0]             [1]
+            
+            [0.1]   [0]     [0]             [0]
+            [0]     [-0.1]  [0]             [0]
+            [0]     [0]     [-0,02002...]   [0]
+            [0]     [0]     [0]             [-1,002002...]
+        """
+        
+        # Vincula o resultado da matriz de projeção a uma uniforme no shader
+        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
+        """glm.ortho
+        projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
+        |2/(right-left)    0               0               -(right+left)/(right-left)|
+        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
+        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
+        |0                 0               0               1                         |
+        """
+    
     def mouse_callback(self, window, xpos, ypos):
         xoffset = xpos - self.last_x
         yoffset = self.last_y - ypos 
@@ -314,17 +544,17 @@ class OpenGLApp:
             
         # Rotaçao
         if glfw.get_key(window, glfw.KEY_LEFT_ALT) == glfw.PRESS:
-            self.rot_values = [0.0, 0.0, 0.5]
+            self.rot_values = [0.0, 0.0, 1.5]
         if glfw.get_key(window, glfw.KEY_RIGHT_ALT) == glfw.PRESS:
-            self.rot_values = [0.0, 0.0, -0.5]
+            self.rot_values = [0.0, 0.0, -1.5]
         if glfw.get_key(window, glfw.KEY_LEFT_CONTROL) == glfw.PRESS:
-            self.rot_values = [0.0, 0.5, 0.0]
+            self.rot_values = [0.0, 1.5, 0.0]
         if glfw.get_key(window, glfw.KEY_RIGHT_CONTROL) == glfw.PRESS:
-            self.rot_values = [0.0, -0.5, 0.0]
+            self.rot_values = [0.0, -1.5, 0.0]
         if glfw.get_key(window, glfw.KEY_PERIOD) == glfw.PRESS:
-            self.rot_values = [0.5, 0.0, 0.0]
+            self.rot_values = [1.5, 0.0, 0.0]
         if glfw.get_key(window, glfw.KEY_COMMA) == glfw.PRESS:
-            self.rot_values = [-0.5, 0.0, 0.0]
+            self.rot_values = [-1.5, 0.0, 0.0]
             
         # Escala
         if glfw.get_key(window, glfw.KEY_0) == glfw.PRESS:
@@ -340,113 +570,14 @@ class OpenGLApp:
         if glfw.get_key(window, glfw.KEY_G) == glfw.PRESS:
             self.toggle_gouraud()
             
-    def perspectiva(self):
-        projection = glm.perspective(glm.radians(90.0), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 100.0)
-        # Vincula o resultado da matriz de projeção a uma uniforme no shader
-        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
-        """glm.perspective
-        
-        fov = Campo de visão
-        aspect = proporção de aspecto da tela
-        n = Distancia do plano mais proximo
-        f = Distancia do plano mais distante
-
-        Primeira Coluna: Relacionada à escala horizontal e à proporção de aspecto.
-
-            cot(fov/2) / aspect: Escala as coordenadas X para corresponder ao campo de visão e à proporção de aspecto.
-
-        Segunda Coluna: Relacionada à escala vertical.
-
-            cot(fov/2): Escala as coordenadas Y para corresponder ao campo de visão.
-
-        Terceira Coluna: Responsável pela transformação de perspectiva e mapeamento de profundidade.
-
-            -(f + n) / (f - n): Mapeia a coordenada Z para o intervalo [-1, 1], essencial para a renderização.
-            -(2 * f * n) / (f - n): Aplica a transformação de perspectiva, fazendo com que objetos mais distantes tenham valores Z menores.
-
-        Quarta Coluna: Usada para a divisão de perspectiva.
-
-            -1: Garante que a coordenada W seja igual a -Z após a multiplicação da matriz. A divisão por W durante a renderização cria o efeito de perspectiva.
-
-        |cot(fov/2) / aspect   0          0                      0|
-        |0                     cot(fov/2) 0                      0|
-        |0                     0         -(f + n) / (f - n)    -(2 * f * n) / (f - n)|
-        |0                     0         -1                      0|
-
-        """
-    
-    def ortogonal(self):
-        projection = glm.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
-        # Vincula o resultado da matriz de projeção a uma uniforme no shader
-        glUniformMatrix4fv(self.projection_loc, 1, GL_FALSE, glm.value_ptr(projection))
-        """glm.ortho
-        
-        |2/(right-left)    0               0               -(right+left)/(right-left)|
-        |0                 2/(top-bottom)  0               -(top+bottom)/(top-bottom)|
-        |0                 0               -2/(far-near)   -(far+near)/(far-near)    |
-        |0                 0               0               1                         |
-        """
-    
-    def transladar(self, model, direcao_x, direcao_y, direcao_z):
-        return glm.translate(model, glm.vec3(direcao_x, direcao_y, direcao_z))
-        """ glm.translate
-            Assumindo que o modelo esta como indetidade
-            model=  |1 0 0 direcao_x|       |1 0 0 0|
-                    |0 1 0 direcao_y|   *   |0 1 0 0|
-                    |0 0 1 direcao_z|       |0 0 1 0|
-                    |0 0 0 1|               |0 0 0 1|
-
-        """
-
-    def rotacionar(self, model, angle_x, angle_y, angle_z):
-        # Aplica a rotação em cada eixo separadamente
-        model = glm.rotate(model, glm.radians(angle_x), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.rotate(model, glm.radians(angle_y), glm.vec3(0.0, 1.0, 0.0))
-        model = glm.rotate(model, glm.radians(angle_z), glm.vec3(0.0, 0.0, 1.0))
-        return model
-        """glm.rotate
-            Rx = | 1  0       0       0 |
-                 | 0  cos(x) -sin(x)  0 |
-                 | 0  sin(x)  cos(x)  0 |
-                 | 0  0       0       1 |
-
-            Ry = | cos(y)  0  sin(y)  0 |
-                 | 0       1  0       0 |
-                 | -sin(y) 0  cos(y)  0 |
-                 | 0       0  0       1 |
-            
-            Rz = | cos(z) -sin(z)  0  0 |
-                 | sin(z)  cos(z)  0  0 |
-                 | 0       0       1  0 |
-                 | 0       0       0  1 |
-        """
-    
-    def escalonar(self, model, escala):
-        return glm.scale(model, glm.vec3(escala, escala, escala))
-        """glm.scale
-            S = | escala  0       0       0 |
-                | 0       escala  0       0 |
-                | 0       0       escala  0 |
-                | 0       0       0       1 |
-        """
-
-    def toggle_phong(self):
-        self.usePhong = not self.usePhong
-        glUniform1i(self.usePhongLoc, self.usePhong)
-    
-    def toggle_gouraud(self):
-        self.useGouraud = not self.useGouraud
-    
-    def toggle_raster(self):
-        self.useRaster = not self.useRaster
-    
     def run(self):
         self.cube_vao, self.cube_vbo = self.create_cube() # cria o vao e vbo do cubo
         model = glm.mat4(1.0)   
         """Matriz modelo identidade
-            |1 0 0|
-            |0 1 0|
-            |0 0 1|
+            |1 0 0 0|
+            |0 1 0 0|
+            |0 0 1 0|
+            |0 0 0 1|
         """
         
         while not glfw.window_should_close(self.window):
@@ -479,7 +610,6 @@ class OpenGLApp:
                 model = self.escalonar(model, self.scale_value) # Aplica escala com os valores do input
                 self.scale_value = 0.0
             
-            glUniform1i(self.usePhongLoc, self.usePhong) # Diz ao shader se deve usar Phong
             
             view = glm.lookAt(self.camera_pos, self.camera_pos + self.camera_front, self.camera_up)
             """glm.lookAt:
@@ -498,6 +628,9 @@ class OpenGLApp:
             
             glUniformMatrix4fv(self.view_loc, 1, GL_FALSE, glm.value_ptr(view)) #glm.value_ptr: usa ponteiro
             glUniformMatrix4fv(self.model_loc, 1, GL_FALSE, glm.value_ptr(model))
+            glUniform3f(self.luz_pos_loc, self.camera_pos[0], self.camera_pos[1], self.camera_pos[2])
+            glUniform3f(self.luz_cor_loc, 1.0, 1.0, 1.0)
+            glUniform3f(self.camera_pos_loc, self.camera_pos[0], self.camera_pos[1], self.camera_pos[2])
             """glUniformMatrix4fv:
                 Manda uma matrix 4x4 de floats pra uma variável uniforme do shader
                 Vertex Shader recebe matrix 4x4 de floats do modelo e da view
