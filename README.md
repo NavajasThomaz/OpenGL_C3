@@ -25,18 +25,11 @@
 
 </div>
 
-### <div align="center">Denise Valéria velarde - 157670</div>
-<div style="display: inline_block", align="center">
-    <a href = "mailto:denise.velarde1@outlook.com"><img src="https://img.shields.io/badge/Microsoft_Outlook-0078D4?style=for-the-badge&logo=microsoft-outlook&logoColor=white" target="_blank"></a>
-    <a href="www.linkedin.com/in/thomaz-navajas" target="_blank"><img src="https://img.shields.io/badge/-LinkedIn-%230077B5?style=for-the-badge&logo=linkedin&logoColor=white" target="_blank"></a> 
-    <a href="https://github.com/DeniseValeriaVelarde" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" target="_blank"></a>
-
-</div>
 <div>
     <details open>
         <summary>
 
-# Sumário</summary>
+# Sumario</summary>
 
 1. [Introdução](#Introdução)
 2. [Implementação](#Implementação)
