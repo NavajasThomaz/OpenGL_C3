@@ -654,11 +654,11 @@ if __name__ == "__main__":
     if not glfw.init():
         raise Exception("GLFW não pode ser inicializado!")
 
-    start_screen = StartScreen()
-    start_screen.show()
+    #start_screen = StartScreen()
+    #start_screen.show()
 
-    if start_screen.start_game:
-        opengl_app = OpenGLApp()
-        opengl_app.run()
+    #if start_screen.start_game:
+    opengl_app = OpenGLApp()
+    opengl_app.run()
 
     glfw.terminate()

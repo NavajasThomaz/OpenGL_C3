@@ -1,7 +1,7 @@
 <img align="center" style='position: fixed' width=50 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_FURG_institucional.png/598px-Logo_FURG_institucional.png" />
 <div align="center">
 <img align="center" width=350 src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/opengl/opengl-original.svg" />
-<img align="center" width=350 src="http://www.c3.furg.br/images/logoP.png" />
+<img align="center" width=200 src="https://errc2024.c3.furg.br/static/media/LogoC3BrancoG.f9d676f09c3fc0870835.png" />
 </div>
 
 
